@@ -1,0 +1,108 @@
+site_name: ComputeChain Docs
+site_description: Documentation for ComputeChain - Proof-of-Compute Blockchain
+site_author: ComputeChain Team
+site_url: https://docs.computechain.ru
+
+repo_name: computechain/computechain
+repo_url: https://github.com/computechain/computechain
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  alternate:
+    - name: English
+      link: .
+      lang: en
+    - name: Русский
+      link: ./ru/
+      lang: ru
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+# Navigation (Apply to all languages, plugin resolves paths)
+nav:
+  - Home: index.md
+  - Understand ComputeChain:
+    - understand/overview.md
+    - understand/poc.md
+    - understand/tokenomics.md
+  - Wallets & Keys:
+    - wallets/address-formats.md
+    - wallets/keystore.md
+  - Staking & Validators:
+    - staking/staking-basic.md
+    - staking/validator-lifecycle.md
+    - staking/rewards.md
+  - GPU Workers / Mining:
+    - mining/overview.md
+    - mining/local-worker.md
+    - mining/task-market.md
+  - Node & Network:
+    - node/run-local.md
+    - node/config.md
+    - node/p2p-sync.md
+  - CLI & SDK:
+    - cli/cpc-cli.md
+    - cli/node-cli.md
+  - Testnet & Bug Bounty:
+    - testnet/join.md
+    - testnet/known-issues.md
+    - testnet/bug-bounty.md
+  - Reference:
+    - reference/tx-types.md
+    - reference/rpc.md
+    - reference/glossary.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ru
+          name: Русский
+          build: true
