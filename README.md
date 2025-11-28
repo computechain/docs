@@ -9,13 +9,11 @@ This repository contains the complete documentation for **ComputeChain** — an 
 
 ## 📖 Documentation Site
 
-The documentation is built with [MkDocs](https://www.mkdocs.org/) and the [Material theme](https://squidfunk.github.io/mkdocs-material/).
-
-**Live site:** [https://docs.computechain.space](https://docs.computechain.space) *(planned)*
+**Live site:** [https://docs.computechain.space](https://docs.computechain.space) 
 
 ---
 
-## 🚀 Local Development
+## 🚀 Local Run
 
 **Prerequisites:**
 - Python 3.12+
