@@ -1,5 +1,8 @@
 # ComputeChain Documentation
 
+> **⚠️ Living Documentation**  
+> This documentation is actively maintained and will be updated as the ComputeChain project evolves. Some features described here may be in development or planned for future releases.
+
 **ComputeChain** — an experimental blockchain with **Proof-of-Compute** architecture, focused on executing **useful computations on GPU** (RTX 4090/5090 and beyond).
 
 ## What is ComputeChain?
