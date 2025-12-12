@@ -102,6 +102,302 @@ Transaction(
 ./cpc-cli tx stake 1500 --from alice
 ```
 
+## UNSTAKE
+
+**Тип:** `TxType.UNSTAKE`
+
+**Назначение:** Вывод застейканных токенов из валидатора
+
+**Gas Cost:** 40,000 gas
+
+**Структура:**
+
+```python
+Transaction(
+    tx_type=TxType.UNSTAKE,
+    from_address="cpc1sender...",
+    to_address=None,
+    amount=500 * 10**18,  # Сумма для вывода (в wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=40000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Обязательные поля:**
+
+- `from_address`: Адрес владельца валидатора (cpc1...)
+- `amount`: Сумма для вывода (в wei, должна быть > 0)
+- `nonce`: Номер транзакции отправителя
+- `pub_key`: Публичный ключ отправителя
+
+**Валидация:**
+
+- Валидатор должен существовать
+- Power валидатора >= amount
+- Баланс отправителя >= fee
+- Подпись должна быть валидной
+
+**Штрафы:**
+
+- Обычный unstake: 0% штраф
+- Unstake в jail: **10% штраф** (сжигается)
+
+**Результат:**
+
+- Токены возвращаются отправителю (минус штраф если в jail)
+- Power валидатора уменьшается на amount
+- Если power становится 0: валидатор деактивируется (`is_active = False`)
+
+**Пример:**
+
+```bash
+python3 -m cli.main tx unstake 500 --from validator1
+```
+
+## UPDATE_VALIDATOR
+
+**Тип:** `TxType.UPDATE_VALIDATOR`
+
+**Назначение:** Обновление метаданных валидатора (имя, сайт, комиссия)
+
+**Gas Cost:** 30,000 gas
+
+**Структура:**
+
+```python
+Transaction(
+    tx_type=TxType.UPDATE_VALIDATOR,
+    from_address="cpc1owner...",
+    to_address=None,
+    amount=0,
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=30000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={
+        "name": "MyPool",  # Опционально, макс 64 символа
+        "website": "https://pool.com",  # Опционально, макс 128 символов
+        "description": "Лучший пул валидаторов",  # Опционально, макс 256 символов
+        "commission_rate": 0.15  # Опционально, 0.0-1.0 (15%)
+    }
+)
+```
+
+**Обязательные поля:**
+
+- `from_address`: Адрес владельца валидатора (cpc1...)
+- Хотя бы одно поле метаданных в payload
+
+**Опциональные поля в payload:**
+
+- `name`: Человекочитаемое имя (макс 64 символа)
+- `website`: URL сайта (макс 128 символов)
+- `description`: Описание (макс 256 символов)
+- `commission_rate`: Ставка комиссии (0.0-1.0, макс 0.20 = 20%)
+
+**Валидация:**
+
+- Валидатор должен существовать
+- Только владелец валидатора может обновлять
+- Соблюдаются лимиты длины полей
+- commission_rate должна быть 0.0-1.0
+- Подпись должна быть валидной
+
+**Результат:**
+
+- Метаданные валидатора обновляются в состоянии
+- Отображаются в dashboard и RPC запросах
+
+**Пример:**
+
+```bash
+python3 -m cli.main tx update-validator \
+  --name "MyPool" \
+  --website "https://pool.com" \
+  --commission 0.15 \
+  --from validator1
+```
+
+## DELEGATE
+
+**Тип:** `TxType.DELEGATE`
+
+**Назначение:** Делегирование токенов валидатору
+
+**Gas Cost:** 35,000 gas
+
+**Структура:**
+
+```python
+Transaction(
+    tx_type=TxType.DELEGATE,
+    from_address="cpc1delegator...",
+    to_address="cpcvalcons1validator...",  # Consensus адрес валидатора
+    amount=500 * 10**18,  # Сумма делегирования (в wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=35000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Обязательные поля:**
+
+- `from_address`: Адрес делегатора (cpc1...)
+- `to_address`: Consensus адрес валидатора (cpcvalcons...)
+- `amount`: Сумма делегирования (в wei, минимум 100 CPC)
+- `nonce`: Номер транзакции отправителя
+- `pub_key`: Публичный ключ отправителя
+
+**Валидация:**
+
+- Валидатор должен существовать и быть активным
+- amount >= min_delegation (100 CPC)
+- Баланс делегатора >= amount + fee
+- Подпись должна быть валидной
+
+**Результат:**
+
+- Токены переводятся от делегатора к валидатору
+- `total_delegated` валидатора увеличивается
+- `power` валидатора увеличивается
+- Делегатор получает право на награды с учетом комиссии
+
+**Пример:**
+
+```bash
+python3 -m cli.main tx delegate cpcvalcons1abc... 500 --from delegator
+```
+
+## UNDELEGATE
+
+**Тип:** `TxType.UNDELEGATE`
+
+**Назначение:** Вывод делегированных токенов от валидатора
+
+**Gas Cost:** 35,000 gas
+
+**Структура:**
+
+```python
+Transaction(
+    tx_type=TxType.UNDELEGATE,
+    from_address="cpc1delegator...",
+    to_address="cpcvalcons1validator...",  # Consensus адрес валидатора
+    amount=200 * 10**18,  # Сумма для вывода (в wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=35000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Обязательные поля:**
+
+- `from_address`: Адрес делегатора (cpc1...)
+- `to_address`: Consensus адрес валидатора (cpcvalcons...)
+- `amount`: Сумма для вывода (в wei, должна быть > 0)
+- `nonce`: Номер транзакции отправителя
+- `pub_key`: Публичный ключ отправителя
+
+**Валидация:**
+
+- Валидатор должен существовать
+- total_delegated валидатора >= amount
+- Баланс делегатора >= fee
+- Подпись должна быть валидной
+
+**Результат:**
+
+- Токены возвращаются делегатору
+- `total_delegated` валидатора уменьшается
+- `power` валидатора уменьшается
+
+**Пример:**
+
+```bash
+python3 -m cli.main tx undelegate cpcvalcons1abc... 200 --from delegator
+```
+
+## UNJAIL
+
+**Тип:** `TxType.UNJAIL`
+
+**Назначение:** Досрочное освобождение из jail (оплата комиссии для выхода из jail до запланированного времени)
+
+**Gas Cost:** 50,000 gas
+
+**Комиссия:** 1,000 CPC (сжигается) + gas комиссия
+
+**Структура:**
+
+```python
+Transaction(
+    tx_type=TxType.UNJAIL,
+    from_address="cpc1validator...",
+    to_address=None,
+    amount=1000 * 10**18,  # Комиссия unjail: 1000 CPC (сжигается)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=50000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Обязательные поля:**
+
+- `from_address`: Адрес владельца валидатора (cpc1...)
+- `amount`: Должна быть ровно 1,000 CPC (комиссия unjail)
+- `nonce`: Номер транзакции отправителя
+- `pub_key`: Публичный ключ отправителя
+
+**Валидация:**
+
+- Валидатор должен существовать
+- Валидатор должен быть в jail (`jailed_until_height > 0`)
+- amount должна быть ровно 1,000 CPC
+- Баланс отправителя >= 1,000 CPC + gas комиссия
+- Подпись должна быть валидной
+
+**Результат:**
+
+- 1,000 CPC сжигается (удаляется из обращения)
+- Валидатор освобождается из jail:
+  - `jailed_until_height = 0`
+  - `missed_blocks = 0`
+  - `is_active = True`
+- Валидатор может участвовать в следующей эпохе
+
+**Пример:**
+
+```bash
+python3 -m cli.main tx unjail --from validator1
+```
+
+**Расчет стоимости:**
+
+```
+Комиссия Unjail: 1,000 CPC (сжигается)
+Gas комиссия: 50,000 * 1,000 wei = 0.00005 CPC
+Итого: ~1,000.00005 CPC
+```
+
 ## SUBMIT_RESULT
 
 **Тип:** `TxType.SUBMIT_RESULT`
@@ -195,11 +491,16 @@ Transaction(
 
 **По типам транзакций:**
 
-| Тип транзакции | Gas Limit |
-|---------------|-----------|
-| TRANSFER | 21,000 |
-| STAKE | 40,000 |
-| SUBMIT_RESULT | 80,000 |
+| Тип транзакции | Gas Limit | Дополнительные комиссии |
+|---------------|-----------|------------------------|
+| TRANSFER | 21,000 | - |
+| STAKE | 40,000 | - |
+| UNSTAKE | 40,000 | 10% штраф если в jail |
+| UPDATE_VALIDATOR | 30,000 | - |
+| DELEGATE | 35,000 | - |
+| UNDELEGATE | 35,000 | - |
+| UNJAIL | 50,000 | +1,000 CPC (сжигается) |
+| SUBMIT_RESULT | 80,000 | - |
 
 **Блок:**
 

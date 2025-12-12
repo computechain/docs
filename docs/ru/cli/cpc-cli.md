@@ -194,6 +194,140 @@ Success! TxHash: 0xabcdef1234567890...
 
 **Важно:** Публичный ключ автоматически берётся из keystore.
 
+#### Вывод стейка
+
+```bash
+./cpc-cli tx unstake <AMOUNT> --from <KEY_NAME> [--node <URL>] [--gas-price <PRICE>] [--gas-limit <LIMIT>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli tx unstake 500 --from alice --node http://localhost:8000
+```
+
+**Параметры:**
+
+- `--gas-price`: Цена газа (по умолчанию: 1,000)
+- `--gas-limit`: Лимит газа (по умолчанию: 40,000)
+
+**Вывод:**
+
+```
+Unstaking 500.0 CPC from cpc1alice...
+Success! TxHash: 0xfedcba0987654321...
+```
+
+**Штраф:** Если валидатор в jail, 10% от суммы вывода сжигается.
+
+#### Обновить метаданные валидатора
+
+```bash
+./cpc-cli tx update-validator --from <KEY_NAME> [--name <NAME>] [--website <URL>] [--description <TEXT>] [--commission <RATE>] [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli tx update-validator \
+  --name "МойПул" \
+  --website "https://pool.com" \
+  --description "Лучший пул валидаторов" \
+  --commission 0.15 \
+  --from alice \
+  --node http://localhost:8000
+```
+
+**Параметры:**
+
+- `--name`: Имя валидатора (макс 64 символа)
+- `--website`: URL сайта (макс 128 символов)
+- `--description`: Описание (макс 256 символов)
+- `--commission`: Ставка комиссии (0.0-1.0, макс 0.20 = 20%)
+- Необходимо указать хотя бы одно поле метаданных
+
+**Вывод:**
+
+```
+Updating validator metadata...
+Success! TxHash: 0x1122334455667788...
+```
+
+#### Делегировать валидатору
+
+```bash
+./cpc-cli tx delegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME> [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli tx delegate cpcvalcons1abc123... 500 --from delegator --node http://localhost:8000
+```
+
+**Параметры:**
+
+- `VALIDATOR_ADDRESS`: Consensus адрес валидатора (cpcvalcons...)
+- `AMOUNT`: Сумма делегирования (минимум 100 CPC)
+
+**Вывод:**
+
+```
+Delegating 500.0 CPC to cpcvalcons1abc123...
+Success! TxHash: 0xaabbccdd11223344...
+```
+
+#### Отозвать делегацию
+
+```bash
+./cpc-cli tx undelegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME> [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli tx undelegate cpcvalcons1abc123... 200 --from delegator --node http://localhost:8000
+```
+
+**Параметры:**
+
+- `VALIDATOR_ADDRESS`: Consensus адрес валидатора (cpcvalcons...)
+- `AMOUNT`: Сумма для вывода
+
+**Вывод:**
+
+```
+Undelegating 200.0 CPC from cpcvalcons1abc123...
+Success! TxHash: 0x9988776655443322...
+```
+
+#### Освободить валидатора из jail
+
+```bash
+./cpc-cli tx unjail --from <KEY_NAME> [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli tx unjail --from alice --node http://localhost:8000
+```
+
+**Стоимость:**
+
+- Комиссия unjail: 1,000 CPC (сжигается)
+- Gas комиссия: ~50,000 gas
+- Всего: ~1,000.00005 CPC
+
+**Вывод:**
+
+```
+Unjailing validator (cost: 1000 CPC + gas)...
+Success! TxHash: 0x5544332211009988...
+```
+
+**Примечание:** Валидатор должен быть в jail для использования этой команды.
+
 #### Отправить результат PoC
 
 ```bash

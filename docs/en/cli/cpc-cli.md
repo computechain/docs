@@ -194,6 +194,140 @@ Success! TxHash: abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678
 
 **Important:** Public key is automatically taken from keystore.
 
+#### Unstaking
+
+```bash
+./cpc-cli tx unstake <AMOUNT> --from <KEY_NAME> [--node <URL>] [--gas-price <PRICE>] [--gas-limit <LIMIT>]
+```
+
+**Example:**
+
+```bash
+./cpc-cli tx unstake 500 --from alice --node http://localhost:8000
+```
+
+**Parameters:**
+
+- `--gas-price`: Gas price (default: 1,000)
+- `--gas-limit`: Gas limit (default: 40,000)
+
+**Output:**
+
+```
+Unstaking 500.0 CPC from cpc1alice...
+Success! TxHash: fedcba0987654321fedcba0987654321fedcba0987654321fedcba09876543
+```
+
+**Penalty:** If validator is jailed, 10% of unstaked amount is burned.
+
+#### Update Validator Metadata
+
+```bash
+./cpc-cli tx update-validator --from <KEY_NAME> [--name <NAME>] [--website <URL>] [--description <TEXT>] [--commission <RATE>] [--node <URL>]
+```
+
+**Example:**
+
+```bash
+./cpc-cli tx update-validator \
+  --name "MyPool" \
+  --website "https://pool.com" \
+  --description "Best validator pool" \
+  --commission 0.15 \
+  --from alice \
+  --node http://localhost:8000
+```
+
+**Parameters:**
+
+- `--name`: Validator name (max 64 chars)
+- `--website`: Website URL (max 128 chars)
+- `--description`: Description (max 256 chars)
+- `--commission`: Commission rate (0.0-1.0, max 0.20 = 20%)
+- At least one metadata field required
+
+**Output:**
+
+```
+Updating validator metadata...
+Success! TxHash: 1122334455667788990011223344556677889900112233445566778899001122
+```
+
+#### Delegate to Validator
+
+```bash
+./cpc-cli tx delegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME> [--node <URL>]
+```
+
+**Example:**
+
+```bash
+./cpc-cli tx delegate cpcvalcons1abc123... 500 --from delegator --node http://localhost:8000
+```
+
+**Parameters:**
+
+- `VALIDATOR_ADDRESS`: Validator consensus address (cpcvalcons...)
+- `AMOUNT`: Delegation amount (minimum 100 CPC)
+
+**Output:**
+
+```
+Delegating 500.0 CPC to cpcvalcons1abc123...
+Success! TxHash: aabbccdd112233445566778899aabbccdd112233445566778899aabbccdd1122
+```
+
+#### Undelegate from Validator
+
+```bash
+./cpc-cli tx undelegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME> [--node <URL>]
+```
+
+**Example:**
+
+```bash
+./cpc-cli tx undelegate cpcvalcons1abc123... 200 --from delegator --node http://localhost:8000
+```
+
+**Parameters:**
+
+- `VALIDATOR_ADDRESS`: Validator consensus address (cpcvalcons...)
+- `AMOUNT`: Amount to undelegate
+
+**Output:**
+
+```
+Undelegating 200.0 CPC from cpcvalcons1abc123...
+Success! TxHash: 99887766554433221100998877665544332211009988776655443322110099
+```
+
+#### Unjail Validator
+
+```bash
+./cpc-cli tx unjail --from <KEY_NAME> [--node <URL>]
+```
+
+**Example:**
+
+```bash
+./cpc-cli tx unjail --from alice --node http://localhost:8000
+```
+
+**Cost:**
+
+- Unjail fee: 1,000 CPC (burned)
+- Gas fee: ~50,000 gas
+- Total: ~1,000.00005 CPC
+
+**Output:**
+
+```
+Unjailing validator (cost: 1000 CPC + gas)...
+Success! TxHash: 5544332211009988776655443322110099887766554433221100998877665544
+```
+
+**Note:** Validator must be jailed to use this command.
+
 #### Submit PoC Result
 
 ```bash
