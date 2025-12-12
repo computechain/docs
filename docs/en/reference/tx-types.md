@@ -103,6 +103,302 @@ Transaction(
 ./cpc-cli tx stake 1500 --from alice
 ```
 
+## UNSTAKE
+
+**Type:** `TxType.UNSTAKE`
+
+**Purpose:** Withdraw staked tokens from validator
+
+**Gas Cost:** 40,000 gas
+
+**Structure:**
+
+```python
+Transaction(
+    tx_type=TxType.UNSTAKE,
+    from_address="cpc1sender...",
+    to_address=None,
+    amount=500 * 10**18,  # Amount to unstake (in wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=40000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Required Fields:**
+
+- `from_address`: Validator owner address (cpc1...)
+- `amount`: Amount to unstake (in wei, must be > 0)
+- `nonce`: Sender transaction number
+- `pub_key`: Sender public key
+
+**Validation:**
+
+- Validator must exist
+- Validator power >= amount
+- Sender balance >= fee
+- Signature must be valid
+
+**Penalty:**
+
+- Normal unstake: 0% penalty
+- Unstake while jailed: **10% penalty** (burned)
+
+**Result:**
+
+- Tokens returned to sender (minus penalty if jailed)
+- Validator power reduced by amount
+- If power becomes 0: validator deactivated (`is_active = False`)
+
+**Example:**
+
+```bash
+python3 -m cli.main tx unstake 500 --from validator1
+```
+
+## UPDATE_VALIDATOR
+
+**Type:** `TxType.UPDATE_VALIDATOR`
+
+**Purpose:** Update validator metadata (name, website, commission)
+
+**Gas Cost:** 30,000 gas
+
+**Structure:**
+
+```python
+Transaction(
+    tx_type=TxType.UPDATE_VALIDATOR,
+    from_address="cpc1owner...",
+    to_address=None,
+    amount=0,
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=30000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={
+        "name": "MyPool",  # Optional, max 64 chars
+        "website": "https://pool.com",  # Optional, max 128 chars
+        "description": "Best validator pool",  # Optional, max 256 chars
+        "commission_rate": 0.15  # Optional, 0.0-1.0 (15%)
+    }
+)
+```
+
+**Required Fields:**
+
+- `from_address`: Validator owner address (cpc1...)
+- At least one metadata field in payload
+
+**Optional Payload Fields:**
+
+- `name`: Human-readable name (max 64 characters)
+- `website`: Website URL (max 128 characters)
+- `description`: Description (max 256 characters)
+- `commission_rate`: Commission rate (0.0-1.0, max 0.20 = 20%)
+
+**Validation:**
+
+- Validator must exist
+- Only validator owner can update
+- Field length limits enforced
+- commission_rate must be 0.0-1.0
+- Signature must be valid
+
+**Result:**
+
+- Validator metadata updated in state
+- Visible in dashboard and RPC queries
+
+**Example:**
+
+```bash
+python3 -m cli.main tx update-validator \
+  --name "MyPool" \
+  --website "https://pool.com" \
+  --commission 0.15 \
+  --from validator1
+```
+
+## DELEGATE
+
+**Type:** `TxType.DELEGATE`
+
+**Purpose:** Delegate tokens to a validator
+
+**Gas Cost:** 35,000 gas
+
+**Structure:**
+
+```python
+Transaction(
+    tx_type=TxType.DELEGATE,
+    from_address="cpc1delegator...",
+    to_address="cpcvalcons1validator...",  # Validator consensus address
+    amount=500 * 10**18,  # Delegation amount (in wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=35000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Required Fields:**
+
+- `from_address`: Delegator address (cpc1...)
+- `to_address`: Validator consensus address (cpcvalcons...)
+- `amount`: Delegation amount (in wei, minimum 100 CPC)
+- `nonce`: Sender transaction number
+- `pub_key`: Sender public key
+
+**Validation:**
+
+- Validator must exist and be active
+- amount >= min_delegation (100 CPC)
+- Delegator balance >= amount + fee
+- Signature must be valid
+
+**Result:**
+
+- Tokens transferred from delegator to validator
+- Validator `total_delegated` increased
+- Validator `power` increased
+- Delegator eligible for commission-based rewards
+
+**Example:**
+
+```bash
+python3 -m cli.main tx delegate cpcvalcons1abc... 500 --from delegator
+```
+
+## UNDELEGATE
+
+**Type:** `TxType.UNDELEGATE`
+
+**Purpose:** Withdraw delegated tokens from validator
+
+**Gas Cost:** 35,000 gas
+
+**Structure:**
+
+```python
+Transaction(
+    tx_type=TxType.UNDELEGATE,
+    from_address="cpc1delegator...",
+    to_address="cpcvalcons1validator...",  # Validator consensus address
+    amount=200 * 10**18,  # Amount to undelegate (in wei)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=35000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Required Fields:**
+
+- `from_address`: Delegator address (cpc1...)
+- `to_address`: Validator consensus address (cpcvalcons...)
+- `amount`: Amount to undelegate (in wei, must be > 0)
+- `nonce`: Sender transaction number
+- `pub_key`: Sender public key
+
+**Validation:**
+
+- Validator must exist
+- Validator total_delegated >= amount
+- Delegator balance >= fee
+- Signature must be valid
+
+**Result:**
+
+- Tokens returned to delegator
+- Validator `total_delegated` decreased
+- Validator `power` decreased
+
+**Example:**
+
+```bash
+python3 -m cli.main tx undelegate cpcvalcons1abc... 200 --from delegator
+```
+
+## UNJAIL
+
+**Type:** `TxType.UNJAIL`
+
+**Purpose:** Early release from jail (pay fee to exit jail before scheduled release)
+
+**Gas Cost:** 50,000 gas
+
+**Fee:** 1,000 CPC (burned) + gas fee
+
+**Structure:**
+
+```python
+Transaction(
+    tx_type=TxType.UNJAIL,
+    from_address="cpc1validator...",
+    to_address=None,
+    amount=1000 * 10**18,  # Unjail fee: 1000 CPC (burned)
+    fee=gas_limit * gas_price,
+    nonce=1,
+    gas_price=1000,
+    gas_limit=50000,
+    timestamp=1700000000,
+    pub_key="02a1b2c3...",
+    payload={}
+)
+```
+
+**Required Fields:**
+
+- `from_address`: Validator owner address (cpc1...)
+- `amount`: Must be exactly 1,000 CPC (unjail fee)
+- `nonce`: Sender transaction number
+- `pub_key`: Sender public key
+
+**Validation:**
+
+- Validator must exist
+- Validator must be jailed (`jailed_until_height > 0`)
+- amount must be exactly 1,000 CPC
+- Sender balance >= 1,000 CPC + gas fee
+- Signature must be valid
+
+**Result:**
+
+- 1,000 CPC burned (removed from circulation)
+- Validator released from jail:
+  - `jailed_until_height = 0`
+  - `missed_blocks = 0`
+  - `is_active = True`
+- Validator can participate in next epoch
+
+**Example:**
+
+```bash
+python3 -m cli.main tx unjail --from validator1
+```
+
+**Cost Breakdown:**
+
+```
+Unjail Fee: 1,000 CPC (burned)
+Gas Fee: 50,000 * 1,000 wei = 0.00005 CPC
+Total: ~1,000.00005 CPC
+```
+
 ## SUBMIT_RESULT
 
 **Type:** `TxType.SUBMIT_RESULT`
@@ -194,11 +490,16 @@ Transaction(
 
 ### Base Gas per Transaction Type
 
-| Transaction Type | Base Gas Used |
-|---------------|-----------|
-| TRANSFER | 21,000 |
-| STAKE | 40,000 |
-| SUBMIT_RESULT | 80,000 |
+| Transaction Type | Base Gas Used | Additional Fees |
+|---------------|-----------|-----------------|
+| TRANSFER | 21,000 | - |
+| STAKE | 40,000 | - |
+| UNSTAKE | 40,000 | 10% penalty if jailed |
+| UPDATE_VALIDATOR | 30,000 | - |
+| DELEGATE | 35,000 | - |
+| UNDELEGATE | 35,000 | - |
+| UNJAIL | 50,000 | +1,000 CPC (burned) |
+| SUBMIT_RESULT | 80,000 | - |
 
 `gas_limit` supplied in a transaction must be at least the base value for its type.
 

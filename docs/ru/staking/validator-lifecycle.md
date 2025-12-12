@@ -153,7 +153,132 @@ val.is_active = False
 - Не получает награды
 - Может быть реактивирован в следующей эпохе (если вернется в топ-N)
 
-### 6. Ре-стейкинг (Добавление стейка)
+### 6. Jailing (Заключение в тюрьму)
+
+**Триггер:** Пропуск слишком большого количества блоков
+
+**Условия:**
+
+- Валидатор пропускает `max_missed_blocks_sequential` блоков (по умолчанию: 10)
+- Производительность падает ниже допустимого порога
+
+**Что происходит:**
+
+```python
+def _jail_validator(val, state, current_height):
+    # Прогрессивные штрафы
+    if val.jail_count == 0:
+        penalty_rate = 0.05  # 5% в первый раз
+    elif val.jail_count == 1:
+        penalty_rate = 0.10  # 10% во второй раз
+    else:
+        penalty_rate = 1.0   # 100% в третий раз (исключение)
+
+    penalty = int(val.power * penalty_rate)
+    val.power = max(0, val.power - penalty)
+    val.total_penalties += penalty
+    val.jail_count += 1
+    val.jailed_until_height = current_height + jail_duration  # +100 блоков
+    val.missed_blocks = 0
+    val.is_active = False
+```
+
+**Прогрессивные штрафы:**
+
+| Количество jail | Штраф | Длительность | Результат |
+|-----------------|-------|--------------|-----------|
+| 1-й | 5% | 100 блоков | Заключен |
+| 2-й | 10% | 100 блоков | Заключен |
+| 3-й | 100% | Навсегда | Исключен |
+
+**Статус:** `jailed_until_height > 0`, `is_active = False`
+
+**Последствия:**
+
+- Валидатор немедленно прекращает производство блоков
+- Не может участвовать в консенсусе
+- Стейк уменьшается на сумму штрафа
+- Остается в jail на 100 блоков (или до транзакции unjail)
+
+### 7. Unjailing (Досрочное освобождение)
+
+**Триггер:** Транзакция `UNJAIL`
+
+**Стоимость:** 1,000 CPC (сжигается) + gas комиссия
+
+**Пример:**
+
+```bash
+./cpc-cli tx unjail --from validator_owner --node http://localhost:8000
+```
+
+**Что происходит:**
+
+```python
+# В State.apply_transaction для UNJAIL
+if tx.amount == unjail_fee:  # Должно быть ровно 1000 CPC
+    # Сжигаем комиссию (удаляем из обращения)
+    sender.balance -= tx.amount
+    # Освобождаем из jail
+    val.jailed_until_height = 0
+    val.missed_blocks = 0
+    val.is_active = True
+```
+
+**Статус:** `jailed_until_height = 0`, `is_active = True`
+
+**Результат:**
+
+- Валидатор может участвовать в следующей эпохе
+- Может снова производить блоки
+- Счетчик пропущенных блоков сброшен
+
+### 8. Unstaking (Вывод стейка)
+
+**Триггер:** Транзакция `UNSTAKE`
+
+**Пример:**
+
+```bash
+./cpc-cli tx unstake 500 --from validator_owner --node http://localhost:8000
+```
+
+**Что происходит:**
+
+```python
+# В State.apply_transaction для UNSTAKE
+penalty_amount = 0
+if val.jailed_until_height > 0:
+    # 10% штраф при выводе во время jail
+    penalty_amount = int(tx.amount * 0.10)
+
+return_amount = tx.amount - penalty_amount
+val.power -= tx.amount
+sender.balance += return_amount
+
+# Деактивация если power падает до 0
+if val.power == 0:
+    val.is_active = False
+```
+
+**Штрафы:**
+
+- Обычный unstake: 0% штраф
+- Unstake в jail: **10% штраф** (сжигается)
+
+**Частичный unstake:**
+
+- Можно вывести часть стейка
+- Валидатор остается активным если `power >= min_validator_stake`
+- Может продолжать валидацию с уменьшенным стейком
+
+**Полный unstake:**
+
+- Если `power = 0`: валидатор деактивируется
+- `is_active = False`
+- Прекращает участие в консенсусе
+
+### 9. Ре-стейкинг (Добавление стейка)
 
 **Триггер:** Новая транзакция `STAKE` с тем же `pub_key`
 

@@ -153,7 +153,132 @@ val.is_active = False
 - Does not receive rewards
 - Can be reactivated in next epoch (if returns to top-N)
 
-### 6. Re-staking
+### 6. Jailing (Performance-based)
+
+**Trigger:** Missing too many blocks
+
+**Conditions:**
+
+- Validator misses `max_missed_blocks_sequential` blocks (default: 10)
+- Performance drops below acceptable threshold
+
+**What happens:**
+
+```python
+def _jail_validator(val, state, current_height):
+    # Graduated slashing
+    if val.jail_count == 0:
+        penalty_rate = 0.05  # 5% first time
+    elif val.jail_count == 1:
+        penalty_rate = 0.10  # 10% second time
+    else:
+        penalty_rate = 1.0   # 100% third time (ejection)
+
+    penalty = int(val.power * penalty_rate)
+    val.power = max(0, val.power - penalty)
+    val.total_penalties += penalty
+    val.jail_count += 1
+    val.jailed_until_height = current_height + jail_duration  # +100 blocks
+    val.missed_blocks = 0
+    val.is_active = False
+```
+
+**Graduated Slashing:**
+
+| Jail Count | Penalty | Duration | Result |
+|------------|---------|----------|--------|
+| 1st | 5% | 100 blocks | Jailed |
+| 2nd | 10% | 100 blocks | Jailed |
+| 3rd | 100% | Permanent | Ejected |
+
+**Status:** `jailed_until_height > 0`, `is_active = False`
+
+**Consequences:**
+
+- Validator stops producing blocks immediately
+- Cannot participate in consensus
+- Stake slashed by penalty amount
+- Remains jailed for 100 blocks (or until unjail transaction)
+
+### 7. Unjailing (Early Release)
+
+**Trigger:** `UNJAIL` transaction
+
+**Cost:** 1,000 CPC (burned) + gas fee
+
+**Example:**
+
+```bash
+./cpc-cli tx unjail --from validator_owner --node http://localhost:8000
+```
+
+**What happens:**
+
+```python
+# In State.apply_transaction for UNJAIL
+if tx.amount == unjail_fee:  # Must be exactly 1000 CPC
+    # Burn the fee (remove from circulation)
+    sender.balance -= tx.amount
+    # Release from jail
+    val.jailed_until_height = 0
+    val.missed_blocks = 0
+    val.is_active = True
+```
+
+**Status:** `jailed_until_height = 0`, `is_active = True`
+
+**Result:**
+
+- Validator can participate in next epoch
+- Can produce blocks again
+- Missed blocks counter reset
+
+### 8. Unstaking (Withdrawal)
+
+**Trigger:** `UNSTAKE` transaction
+
+**Example:**
+
+```bash
+./cpc-cli tx unstake 500 --from validator_owner --node http://localhost:8000
+```
+
+**What happens:**
+
+```python
+# In State.apply_transaction for UNSTAKE
+penalty_amount = 0
+if val.jailed_until_height > 0:
+    # 10% penalty if unstaking while jailed
+    penalty_amount = int(tx.amount * 0.10)
+
+return_amount = tx.amount - penalty_amount
+val.power -= tx.amount
+sender.balance += return_amount
+
+# Deactivate if power drops to 0
+if val.power == 0:
+    val.is_active = False
+```
+
+**Penalties:**
+
+- Normal unstake: 0% penalty
+- Unstake while jailed: **10% penalty** (burned)
+
+**Partial Unstaking:**
+
+- Can unstake part of stake
+- Validator remains active if `power >= min_validator_stake`
+- Can continue validating with reduced stake
+
+**Full Unstaking:**
+
+- If `power = 0`: validator deactivated
+- `is_active = False`
+- Stops participating in consensus
+
+### 9. Re-staking
 
 **Trigger:** New `STAKE` transaction with same `pub_key`
 
