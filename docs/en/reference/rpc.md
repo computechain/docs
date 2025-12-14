@@ -161,6 +161,111 @@ curl http://localhost:8000/validators
 
 - `503`: Node not initialized
 
+### GET /delegator/{address}/delegations
+
+**Purpose:** Get all delegations for a delegator address
+
+**Request:**
+
+```bash
+curl http://localhost:8000/delegator/cpc1abc.../delegations
+```
+
+**Response:**
+
+```json
+{
+  "delegator": "cpc1abc...",
+  "delegations": [
+    {
+      "validator": "cpcvalcons1xyz...",
+      "amount": 60000000,
+      "created_height": 100,
+      "validator_name": "Validator A",
+      "validator_commission": 0.10
+    },
+    {
+      "validator": "cpcvalcons1def...",
+      "amount": 40000000,
+      "created_height": 150,
+      "validator_name": "Validator B",
+      "validator_commission": 0.05
+    }
+  ],
+  "total_delegated": 100000000
+}
+```
+
+**Fields:**
+
+- `delegator`: Delegator address
+- `delegations`: Array of delegations
+  - `validator`: Validator consensus address
+  - `amount`: Delegated amount (in base units)
+  - `created_height`: Block height when delegation was created
+  - `validator_name`: Validator name (if set)
+  - `validator_commission`: Validator commission rate (0.0-1.0)
+- `total_delegated`: Total amount delegated
+
+**Errors:**
+
+- `503`: Node not initialized
+
+### GET /delegator/{address}/rewards
+
+**Purpose:** Get reward history for a delegator address
+
+**Request:**
+
+```bash
+curl http://localhost:8000/delegator/cpc1abc.../rewards
+```
+
+**Response:**
+
+```json
+{
+  "delegator": "cpc1abc...",
+  "total_rewards": 125500000,
+  "rewards_by_epoch": [
+    {
+      "epoch": 0,
+      "amount": 25400000
+    },
+    {
+      "epoch": 1,
+      "amount": 24800000
+    },
+    {
+      "epoch": 2,
+      "amount": 25100000
+    },
+    {
+      "epoch": 3,
+      "amount": 25000000
+    },
+    {
+      "epoch": 4,
+      "amount": 25200000
+    }
+  ],
+  "current_epoch": 5
+}
+```
+
+**Fields:**
+
+- `delegator`: Delegator address
+- `total_rewards`: Total rewards earned (in base units)
+- `rewards_by_epoch`: Array of rewards per epoch
+  - `epoch`: Epoch number
+  - `amount`: Reward amount for that epoch (in base units)
+- `current_epoch`: Current epoch number
+
+**Errors:**
+
+- `503`: Node not initialized
+
 ### POST /tx/send
 
 **Purpose:** Send transaction to mempool

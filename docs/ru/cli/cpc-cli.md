@@ -142,6 +142,62 @@ cpcvalcons1alice...                            1500        True
 cpcvalcons1bob...                               1200        True
 ```
 
+#### Делегации
+
+Получить все делегации для указанного адреса.
+
+```bash
+./cpc-cli query delegations <ADDRESS> [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli query delegations cpc1abc... --node http://localhost:8000
+```
+
+**Вывод:**
+
+```
+Delegator: cpc1abc...
+Total Delegated: 100.0 CPC
+
+Validator                                      Amount          Commission  Name
+------------------------------------------------------------------------------------------
+cpcvalcons1xyz...                              60.0            10.0%       Validator A
+cpcvalcons1def...                              40.0            5.0%        Validator B
+```
+
+#### Награды
+
+Получить историю наград для адреса делегатора.
+
+```bash
+./cpc-cli query rewards <ADDRESS> [--node <URL>]
+```
+
+**Пример:**
+
+```bash
+./cpc-cli query rewards cpc1abc... --node http://localhost:8000
+```
+
+**Вывод:**
+
+```
+Delegator: cpc1abc...
+Current Epoch: 5
+Total Rewards: 125.5 CPC
+
+Epoch      Reward Amount
+------------------------------
+0          25.4
+1          24.8
+2          25.1
+3          25.0
+4          25.2
+```
+
 ### Tx — Транзакции
 
 #### Отправить монеты

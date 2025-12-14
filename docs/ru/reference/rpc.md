@@ -160,6 +160,111 @@ curl http://localhost:8000/validators
 
 - `503`: Нода не инициализирована
 
+### GET /delegator/{address}/delegations
+
+**Назначение:** Получить все делегации для адреса делегатора
+
+**Запрос:**
+
+```bash
+curl http://localhost:8000/delegator/cpc1abc.../delegations
+```
+
+**Ответ:**
+
+```json
+{
+  "delegator": "cpc1abc...",
+  "delegations": [
+    {
+      "validator": "cpcvalcons1xyz...",
+      "amount": 60000000,
+      "created_height": 100,
+      "validator_name": "Validator A",
+      "validator_commission": 0.10
+    },
+    {
+      "validator": "cpcvalcons1def...",
+      "amount": 40000000,
+      "created_height": 150,
+      "validator_name": "Validator B",
+      "validator_commission": 0.05
+    }
+  ],
+  "total_delegated": 100000000
+}
+```
+
+**Поля:**
+
+- `delegator`: Адрес делегатора
+- `delegations`: Массив делегаций
+  - `validator`: Консенсус-адрес валидатора
+  - `amount`: Делегированная сумма (в базовых единицах)
+  - `created_height`: Высота блока, когда была создана делегация
+  - `validator_name`: Имя валидатора (если установлено)
+  - `validator_commission`: Комиссия валидатора (0.0-1.0)
+- `total_delegated`: Общая делегированная сумма
+
+**Ошибки:**
+
+- `503`: Нода не инициализирована
+
+### GET /delegator/{address}/rewards
+
+**Назначение:** Получить историю наград для адреса делегатора
+
+**Запрос:**
+
+```bash
+curl http://localhost:8000/delegator/cpc1abc.../rewards
+```
+
+**Ответ:**
+
+```json
+{
+  "delegator": "cpc1abc...",
+  "total_rewards": 125500000,
+  "rewards_by_epoch": [
+    {
+      "epoch": 0,
+      "amount": 25400000
+    },
+    {
+      "epoch": 1,
+      "amount": 24800000
+    },
+    {
+      "epoch": 2,
+      "amount": 25100000
+    },
+    {
+      "epoch": 3,
+      "amount": 25000000
+    },
+    {
+      "epoch": 4,
+      "amount": 25200000
+    }
+  ],
+  "current_epoch": 5
+}
+```
+
+**Поля:**
+
+- `delegator`: Адрес делегатора
+- `total_rewards`: Общие заработанные награды (в базовых единицах)
+- `rewards_by_epoch`: Массив наград по эпохам
+  - `epoch`: Номер эпохи
+  - `amount`: Сумма награды за эту эпоху (в базовых единицах)
+- `current_epoch`: Номер текущей эпохи
+
+**Ошибки:**
+
+- `503`: Нода не инициализирована
+
 ### POST /tx/send
 
 **Назначение:** Отправить транзакцию в мемпул

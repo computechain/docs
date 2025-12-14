@@ -71,35 +71,53 @@ Fees = (5 * 21_000 * 1000) + (1 * 40_000 * 1000)
 
 **Триггер:** При добавлении блока
 
-**Код:**
+**Логика распределения:**
+
+1. **Расчёт общей награды:** `total_reward = block_reward + transaction_fees`
+2. **Проверка делегаций:**
+   - Если у валидатора есть делегации → применяется комиссия
+   - Если делегаций нет → валидатор получает 100%
+
+### Без делегаций
+
+Валидатор получает полную награду:
 
 ```python
-def _distribute_rewards(self, block: Block, state: AccountState):
-    proposer_addr = block.header.proposer_address
-    val = state.get_validator(proposer_addr)
-    
-    if not val or not val.is_active:
-        return  # Валидатор не активен
-    
-    # Определение адреса для награды
-    target_addr = val.reward_address
-    if not target_addr:
-        # Fallback: derive from pub_key
-        target_addr = address_from_pubkey(
-            bytes.fromhex(val.pq_pub_key), 
-            prefix="cpc"
-        )
-    
-    acc = state.get_account(target_addr)
-    
-    # Расчёт награды
-    block_reward = calculate_block_reward(block.header.height)
-    fees_total = sum(tx.gas_limit * tx.gas_price for tx in block.txs)
-    total_amount = block_reward + fees_total
-    
-    # Начисление
-    acc.balance += total_amount
-    state.set_account(acc)
+total_reward = block_reward + fees_total
+validator_account.balance += total_reward
+```
+
+### С делегациями и комиссией
+
+**Модель комиссии (по умолчанию: 10%):**
+
+```python
+# У валидатора есть делегации
+commission_amount = int(total_reward * validator.commission_rate)  # 10%
+delegators_share = total_reward - commission_amount  # 90%
+
+# Валидатор получает комиссию
+validator_account.balance += commission_amount
+
+# Делегаторы получают пропорциональную долю
+for delegation in validator.delegations:
+    delegator_reward = (delegators_share * delegation.amount) // validator.total_delegated
+    delegator_account.balance += delegator_reward
+    delegator_account.reward_history[epoch] += delegator_reward  # Отслеживание наград
+```
+
+**Пример:**
+
+```
+Общая награда: 10 CPC
+Комиссия валидатора: 10%
+Всего делегировано: 100 CPC
+
+Комиссия валидатору: 1 CPC
+Доля делегаторов: 9 CPC
+
+Делегатор A (60 CPC делегировано): 5.4 CPC
+Делегатор B (40 CPC делегировано): 3.6 CPC
 ```
 
 ### Адрес награды
@@ -210,7 +228,7 @@ Total Reward: 10.000082 CPC → reward_address валидатора B
 
 ## Мониторинг наград
 
-### Проверка баланса reward_address
+### Проверка наград валидатора
 
 ```bash
 # Получить reward_address валидатора
@@ -220,32 +238,87 @@ Total Reward: 10.000082 CPC → reward_address валидатора B
 ./cpc-cli query balance <REWARD_ADDRESS> --node http://localhost:8000
 ```
 
+### Проверка наград делегатора
+
+**Запрос истории наград делегатора:**
+
+```bash
+# Получить историю наград для адреса делегатора
+./cpc-cli query rewards <DELEGATOR_ADDRESS> --node http://localhost:8000
+```
+
+**Пример вывода:**
+
+```
+Delegator: cpc1abc...
+Current Epoch: 5
+Total Rewards: 125.5 CPC
+
+Epoch      Reward Amount
+------------------------------
+0          25.4
+1          24.8
+2          25.1
+3          25.0
+4          25.2
+```
+
+### Проверка делегаций
+
+**Просмотр всех делегаций для адреса:**
+
+```bash
+./cpc-cli query delegations <ADDRESS> --node http://localhost:8000
+```
+
+**Пример вывода:**
+
+```
+Delegator: cpc1abc...
+Total Delegated: 100.0 CPC
+
+Validator                                      Amount          Commission  Name
+------------------------------------------------------------------------------------------
+cpcvalcons1xyz...                              60.0            10.0%       Validator A
+cpcvalcons1def...                              40.0            5.0%        Validator B
+```
+
 ### Логи ноды
 
 **В логах ноды:**
 
 ```
 Block 15 added. Hash: 0x1234... (Round 0)
-Distributed 10000000000000000000 (Reward: 10000000000000000000, Fees: 0) to cpc1alice...
+Distributed 1000000000000000000 (commission 10.0%) to validator cpc1alice..., 9000000000000000000 to delegators
 ```
 
 **Примечание:** В текущей реализации логирование наград может быть отключено для производительности.
 
-## Будущие улучшения
+## Текущие возможности
 
-### Планируется:
+### ✅ Реализовано:
 
-1. **Delegation:**
-   - Стейкеры смогут делегировать токены валидаторам
-   - Награды распределяются между валидатором и делегаторами
+1. **Делегирование и награды:**
+   - Стейкеры могут делегировать токены валидаторам
+   - Пропорциональное распределение наград делегаторам
+   - Отслеживание истории наград по эпохам
 
-2. **Slashing:**
-   - Штрафы за некорректное поведение
-   - Часть стейка может быть слэшнута
+2. **Комиссия валидатора:**
+   - Валидаторы могут устанавливать комиссию (по умолчанию 10%)
+   - Комиссия вычитается перед распределением делегаторам
+   - Прозрачная модель комиссии
 
-3. **Комиссия валидатора:**
-   - Валидатор может установить комиссию (например, 10%)
-   - Остальная часть наград идёт делегаторам
+### Будущие улучшения
+
+**Планируется:**
+
+1. **Расширенный слэшинг:**
+   - Дополнительные штрафы за некорректное поведение
+   - Частичный слэшинг делегированных стейков
+
+2. **Автоматическое реинвестирование:**
+   - Автоматическое реинвестирование наград от делегирования
+   - Стратегии реинвестирования
 
 ## Следующие шаги
 

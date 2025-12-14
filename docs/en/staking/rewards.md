@@ -70,35 +70,53 @@ Fees = (5 * 21_000 * 1000) + (1 * 40_000 * 1000)
 
 **Trigger:** When block is added
 
-**Code:**
+**Distribution Logic:**
+
+1. **Calculate Total Reward:** `total_reward = block_reward + transaction_fees`
+2. **Check for Delegations:**
+   - If validator has delegations → apply commission split
+   - If no delegations → validator receives 100%
+
+### Without Delegations
+
+Validator receives full reward:
 
 ```python
-def _distribute_rewards(self, block: Block, state: AccountState):
-    proposer_addr = block.header.proposer_address
-    val = state.get_validator(proposer_addr)
-    
-    if not val or not val.is_active:
-        return  # Validator not active
-    
-    # Determine reward address
-    target_addr = val.reward_address
-    if not target_addr:
-        # Fallback: derive from pub_key
-        target_addr = address_from_pubkey(
-            bytes.fromhex(val.pq_pub_key), 
-            prefix="cpc"
-        )
-    
-    acc = state.get_account(target_addr)
-    
-    # Calculate reward
-    block_reward = calculate_block_reward(block.header.height)
-    fees_total = sum(GAS_PER_TYPE.get(tx.tx_type, 0) * tx.gas_price for tx in block.txs)
-    total_amount = block_reward + fees_total
-    
-    # Credit
-    acc.balance += total_amount
-    state.set_account(acc)
+total_reward = block_reward + fees_total
+validator_account.balance += total_reward
+```
+
+### With Delegations & Commission
+
+**Commission Model (Default: 10%):**
+
+```python
+# Validator has delegations
+commission_amount = int(total_reward * validator.commission_rate)  # 10%
+delegators_share = total_reward - commission_amount  # 90%
+
+# Validator receives commission
+validator_account.balance += commission_amount
+
+# Delegators receive proportional share
+for delegation in validator.delegations:
+    delegator_reward = (delegators_share * delegation.amount) // validator.total_delegated
+    delegator_account.balance += delegator_reward
+    delegator_account.reward_history[epoch] += delegator_reward  # Track rewards
+```
+
+**Example:**
+
+```
+Total Reward: 10 CPC
+Validator Commission: 10%
+Total Delegated: 100 CPC
+
+Commission to Validator: 1 CPC
+Delegators Share: 9 CPC
+
+Delegator A (60 CPC delegated): 5.4 CPC
+Delegator B (40 CPC delegated): 3.6 CPC
 ```
 
 ### Reward Address
@@ -209,7 +227,7 @@ Total Reward: 10.000082 CPC → validator B's reward_address
 
 ## Monitoring Rewards
 
-### Check reward_address Balance
+### Check Validator Rewards
 
 ```bash
 # Get validator's reward_address
@@ -219,32 +237,87 @@ Total Reward: 10.000082 CPC → validator B's reward_address
 ./cpc-cli query balance <REWARD_ADDRESS> --node http://localhost:8000
 ```
 
+### Check Delegator Rewards
+
+**Query rewards for delegator:**
+
+```bash
+# Get reward history for delegator address
+./cpc-cli query rewards <DELEGATOR_ADDRESS> --node http://localhost:8000
+```
+
+**Example output:**
+
+```
+Delegator: cpc1abc...
+Current Epoch: 5
+Total Rewards: 125.5 CPC
+
+Epoch      Reward Amount
+------------------------------
+0          25.4
+1          24.8
+2          25.1
+3          25.0
+4          25.2
+```
+
+### Check Delegations
+
+**View all delegations for address:**
+
+```bash
+./cpc-cli query delegations <ADDRESS> --node http://localhost:8000
+```
+
+**Example output:**
+
+```
+Delegator: cpc1abc...
+Total Delegated: 100.0 CPC
+
+Validator                                      Amount          Commission  Name
+------------------------------------------------------------------------------------------
+cpcvalcons1xyz...                              60.0            10.0%       Validator A
+cpcvalcons1def...                              40.0            5.0%        Validator B
+```
+
 ### Node Logs
 
 **In node logs:**
 
 ```
 Block 15 added. Hash: 0x1234... (Round 0)
-Distributed 10000000000000000000 (Reward: 10000000000000000000, Fees: 0) to cpc1alice...
+Distributed 1000000000000000000 (commission 10.0%) to validator cpc1alice..., 9000000000000000000 to delegators
 ```
 
 **Note:** In current implementation, reward logging may be disabled for performance.
 
-## Future Improvements
+## Current Features
 
-### Planned:
+### ✅ Implemented:
 
-1. **Delegation:**
+1. **Delegation & Rewards:**
    - Stakers can delegate tokens to validators
-   - Rewards distributed between validator and delegates
+   - Proportional reward distribution to delegators
+   - Reward history tracking per epoch
 
-2. **Slashing:**
-   - Penalties for incorrect behavior
-   - Part of stake may be slashed
+2. **Validator Commission:**
+   - Validators can set commission rate (default 10%)
+   - Commission is taken before distributing to delegators
+   - Transparent commission model
 
-3. **Validator Commission:**
-   - Validator can set commission (e.g., 10%)
-   - Remaining rewards go to delegates
+### Future Improvements
+
+**Planned:**
+
+1. **Advanced Slashing:**
+   - Additional penalties for incorrect behavior
+   - Partial slashing of delegated stakes
+
+2. **Compound Rewards:**
+   - Auto-compounding of delegation rewards
+   - Reinvestment strategies
 
 ## Next Steps
 
