@@ -62,7 +62,7 @@ markdown_extensions:
 
 # Navigation (Apply to all languages, plugin resolves paths)
 nav:
-  - Home: README.md
+  - Home: index.md
   - Staking Guide: staking-guide.md
   - Validator Guide: validator-guide.md
   - CLI Reference: cli-reference.md
