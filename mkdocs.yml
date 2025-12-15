@@ -62,37 +62,12 @@ markdown_extensions:
 
 # Navigation (Apply to all languages, plugin resolves paths)
 nav:
-  - Home: index.md
-  - Understand ComputeChain:
-    - understand/overview.md
-    - understand/poc.md
-    - understand/tokenomics.md
-  - Wallets & Keys:
-    - wallets/address-formats.md
-    - wallets/keystore.md
-  - Staking & Validators:
-    - staking/staking-basic.md
-    - staking/validator-lifecycle.md
-    - staking/rewards.md
-  - GPU Workers / Mining:
-    - mining/overview.md
-    - mining/local-worker.md
-    - mining/task-market.md
-  - Node & Network:
-    - node/run-local.md
-    - node/config.md
-    - node/p2p-sync.md
-  - CLI & SDK:
-    - cli/cpc-cli.md
-    - cli/node-cli.md
-  - Testnet & Bug Bounty:
-    - testnet/join.md
-    - testnet/known-issues.md
-    - testnet/bug-bounty.md
-  - Reference:
-    - reference/tx-types.md
-    - reference/rpc.md
-    - reference/glossary.md
+  - Home: README.md
+  - Staking Guide: staking-guide.md
+  - Validator Guide: validator-guide.md
+  - CLI Reference: cli-reference.md
+  - API Reference: api-reference.md
+  - Advanced Topics: advanced.md
 
 plugins:
   - search
