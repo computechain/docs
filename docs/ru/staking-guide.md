@@ -70,13 +70,13 @@
 **Вывод:**
 
 ```
-Делегатор: cpc1abc...
-Всего делегировано: 100.0 CPC
+Delegator: cpc1abc...
+Total Delegated: 100.0 CPC
 
-Валидатор                              Сумма     Комиссия  Имя
-------------------------------------------------------------------------------------------
-cpcvalcons1xyz...                      60.0      10.0%     Валидатор A
-cpcvalcons1def...                      40.0      5.0%      Валидатор B
+Validator                Amount    Commission  Name
+------------------------------------------------------
+cpcvalcons1xyz...        60.0      10.0%       Validator A
+cpcvalcons1def...        40.0      5.0%        Validator B
 ```
 
 ### Отменить делегирование
@@ -120,10 +120,10 @@ cpcvalcons1def...                      40.0      5.0%      Валидатор B
 **Вывод:**
 
 ```
-Делегатор: cpc1abc...
-Всего наград: 125.5 CPC
+Delegator: cpc1abc...
+Total Rewards: 125.5 CPC
 
-Эпоха    Награда
+Epoch    Reward
 ------------------
 0        25.4 CPC
 1        24.8 CPC

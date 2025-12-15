@@ -132,7 +132,7 @@ curl http://localhost:8000/delegator/cpc1abc.../delegations
       "validator": "cpcvalcons1xyz...",
       "amount": 60000000,
       "created_height": 100,
-      "validator_name": "Валидатор A",
+      "validator_name": "Validator A",
       "validator_commission": 0.10
     }
   ]

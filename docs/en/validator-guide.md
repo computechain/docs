@@ -183,24 +183,24 @@ curl http://localhost:8000/balance/<VALIDATOR_ADDRESS>
 
 ### Infrastructure
 
-✅ **Redundancy** - Multiple servers, failover
-✅ **Monitoring** - Alerts for downtime
-✅ **Security** - Firewall, DDoS protection
-✅ **Backups** - Regular key backups
+- ✅ **Redundancy** - Multiple servers, failover
+- ✅ **Monitoring** - Alerts for downtime
+- ✅ **Security** - Firewall, DDoS protection
+- ✅ **Backups** - Regular key backups
 
 ### Operations
 
-✅ **Uptime** - Maintain >95% uptime
-✅ **Updates** - Keep node software updated
-✅ **Commission** - Set fair rate (5-15%)
-✅ **Communication** - Announce maintenance windows
+- ✅ **Uptime** - Maintain >95% uptime
+- ✅ **Updates** - Keep node software updated
+- ✅ **Commission** - Set fair rate (5-15%)
+- ✅ **Communication** - Announce maintenance windows
 
 ### Security
 
-✅ **Key Management** - Secure private keys
-✅ **Access Control** - Limit SSH access
-✅ **Monitoring** - Alert on unusual activity
-✅ **Backup** - Secure key backups
+- ✅ **Key Management** - Secure private keys
+- ✅ **Access Control** - Limit SSH access
+- ✅ **Monitoring** - Alert on unusual activity
+- ✅ **Backup** - Secure key backups
 
 ## Troubleshooting
 

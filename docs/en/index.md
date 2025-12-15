@@ -63,12 +63,12 @@ open http://localhost:8000
 
 ## Key Features
 
-✅ **Multi-Validator PoA** - Round-robin block production
-✅ **Delegation & Rewards** - Delegate tokens, earn proportional rewards
-✅ **Commission Model** - Validators earn 10% commission (configurable)
-✅ **Performance Tracking** - Uptime scoring, automated jailing
-✅ **Graduated Slashing** - Progressive penalties (5% → 10% → 100%)
-✅ **Post-Quantum Ready** - PQ signature architecture
+- ✅ **Multi-Validator PoA** - Round-robin block production
+- ✅ **Delegation & Rewards** - Delegate tokens, earn proportional rewards
+- ✅ **Commission Model** - Validators earn 10% commission (configurable)
+- ✅ **Performance Tracking** - Uptime scoring, automated jailing
+- ✅ **Graduated Slashing** - Progressive penalties (5% → 10% → 100%)
+- ✅ **Post-Quantum Ready** - PQ signature architecture
 
 ## Network Info
 
