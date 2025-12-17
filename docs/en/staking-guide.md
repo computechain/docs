@@ -11,7 +11,9 @@ Staking in ComputeChain allows you to:
 
 ### Requirements
 
-- **Minimum stake:** 100 CPC
+- **Minimum stake:**
+  - Devnet: 1,000 CPC
+  - Mainnet: 100,000 CPC
 - **Node:** Must run a validator node
 - **Uptime:** 75% minimum to stay active
 
@@ -41,14 +43,23 @@ Staking in ComputeChain allows you to:
 
 **Important:**
 - Can unstake partially or fully
+- **Unbonding period:**
+  - Devnet: 100 blocks (~16 minutes)
+  - Mainnet: 21 days
 - **Penalty if jailed:** 10% slashed when unstaking while jailed
 - Full unstake → validator deactivated
+- Tokens automatically returned after unbonding period
 
 ## Delegation
 
 ### Delegate to Validator
 
 Earn passive rewards by delegating to validators.
+
+**Limits:**
+- **Minimum delegation:** 100 CPC
+- **Max validators per delegator:** 10
+- **Max validator power:** 20% of total voting power
 
 ```bash
 ./cpc-cli tx delegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME>
@@ -85,30 +96,46 @@ cpcvalcons1def...        40.0      5.0%        Validator B
 ./cpc-cli tx undelegate <VALIDATOR_ADDRESS> <AMOUNT> --from <KEY_NAME>
 ```
 
+**Important:**
+- **Unbonding period:** Same as validators (21 days mainnet / 100 blocks devnet)
+- **No penalty:** Delegators are not penalized for undelegating
+- **Slashing risk:** If validator is slashed, delegators lose 5% too
+- Tokens automatically returned after unbonding period
+
 ## Rewards
 
 ### How Rewards Work
 
 **Block Reward:** 10 CPC per block (halves every 1M blocks)
 
-**Distribution:**
+**Block Reward Split:**
+- **70%** → Validator Pool (block producer)
+- **30%** → Miner Pool (PoC workers, currently burned until Phase 2A)
+
+**Transaction Fees Split:**
+- **90%** → Validator (block producer)
+- **10%** → Treasury (community pool)
+
+**Validator Reward Distribution:**
 1. **Validator has delegations:**
-   - Validator receives commission (default 10%)
-   - Delegators share remaining 90% proportionally
+   - Validator receives commission (0-20%, configurable)
+   - Delegators share remaining amount proportionally
+   - Any dust from integer division is burned
 
 2. **No delegations:**
-   - Validator receives 100%
+   - Validator receives 100% of their pool
 
 **Example:**
 
 ```
 Block Reward: 10 CPC
+Validator Pool (70%): 7 CPC
 Validator Commission: 10%
 Total Delegated: 100 CPC
 
-→ Validator: 1 CPC (commission)
-→ Delegator A (60 CPC): 5.4 CPC
-→ Delegator B (40 CPC): 3.6 CPC
+→ Validator: 0.7 CPC (commission)
+→ Delegator A (60 CPC): 3.78 CPC
+→ Delegator B (40 CPC): 2.52 CPC
 ```
 
 ### Check Rewards
@@ -138,10 +165,23 @@ Rewards are **auto-credited** to your balance - no manual claim needed!
 
 ### For Validators
 
-Set your commission rate (0-100%):
+Set your commission rate (0-20%):
 
 ```bash
 ./cpc-cli tx update-validator --commission 0.15 --from mykey
+```
+
+**Rules:**
+- **Range:** 0% - 20% maximum
+- **Cooldown:** 7 days between changes
+- **Announce period:** 4 hours before change takes effect
+- **Max increase:** +5 percentage points per change
+
+**Example:**
+```
+Day 0: Commission 5%
+Day 7: Announce change to 10% → Effective in 4 hours
+Day 14: Can change again (cooldown passed)
 ```
 
 **Default:** 10%
@@ -153,6 +193,8 @@ Choose validators with:
 - ✅ Low commission (more rewards for you)
 - ✅ High uptime (consistent rewards)
 - ✅ Good reputation
+
+**Protection:** During the 4-hour announce period, delegators can undelegate without penalty (just the normal 21-day unbonding period).
 
 ## Tips
 
@@ -168,6 +210,7 @@ Choose validators with:
 
 ## Next Steps
 
+- **[Economics](economics.md)** - Complete economic model, tokenomics, and reward distribution
 - **[Validator Guide](validator-guide.md)** - Run validator node, manage lifecycle
 - **[CLI Reference](cli-reference.md)** - Complete command list
 - **[API Reference](api-reference.md)** - Query via RPC

@@ -52,8 +52,8 @@ Get testnet tokens from faucet or transfer from another account.
 ### 3. Stake
 
 ```bash
-# Minimum 100 CPC
-./cpc-cli tx stake 500 --from validator
+# Minimum: 1,000 CPC (devnet) / 100,000 CPC (mainnet)
+./cpc-cli tx stake 1000 --from validator
 ```
 
 ### 4. Wait for Activation
@@ -79,9 +79,10 @@ Validators activate after 100 blocks (~16 minutes).
 **Trigger:** Epoch transition (every 100 blocks)
 
 **Requirements:**
-- Minimum stake (100 CPC)
+- Minimum stake (1,000 CPC devnet / 100,000 CPC mainnet)
 - Minimum power relative to others
 - Not jailed
+- Cannot exceed 20% of total voting power
 
 ### Performance Tracking
 
@@ -115,20 +116,27 @@ curl http://localhost:8000/validators | jq '.validators[] | {address, uptime_sco
 ./cpc-cli tx unjail --from validator
 ```
 
-### Graduated Slashing
+### Slashing
 
-Progressive penalties for repeated jailing:
+**Penalty:** 5% of total stake (self_stake + delegations)
 
-| Jail Count | Penalty | Action |
-|------------|---------|--------|
-| 1st time | 5% | Slash 5% of stake |
-| 2nd time | 10% | Slash 10% of stake |
-| 3rd time | 100% | **EJECTED** - stake burned |
+**Triggered when:**
+- Validator is jailed for poor performance
+- Double-signing or Byzantine behavior
+- Repeated violations
+
+**What gets slashed:**
+- Both validator's self_stake AND delegator stakes are reduced by 5%
+- Slashed tokens are **burned** (not redistributed)
+- Delegators share the risk with validators
+
+**Unjail fee:** 1,000 CPC (burned when unjailing early)
 
 **Prevention:**
-- Monitor uptime constantly
+- Monitor uptime constantly (maintain >75%)
 - Set up alerts for missed blocks
 - Have backup infrastructure
+- Never run duplicate validator nodes (double-signing risk)
 
 ## Validator Metadata
 
@@ -142,6 +150,13 @@ Progressive penalties for repeated jailing:
   --commission 0.10 \
   --from validator
 ```
+
+**Commission Rules:**
+- **Range:** 0% - 20% maximum
+- **Cooldown:** 7 days between changes
+- **Announce period:** 4 hours before effective
+- **Max increase:** +5 percentage points per change
+- Delegators can undelegate during announce period
 
 ### View Metadata
 
@@ -234,6 +249,7 @@ tail -f .validator/node.log | grep "Block.*added"
 
 ## Next Steps
 
+- **[Economics](economics.md)** - Complete economic model, tokenomics, and reward distribution
 - **[Staking Guide](staking-guide.md)** - Stake, delegate, rewards
 - **[CLI Reference](cli-reference.md)** - Complete commands
 - **[Advanced Topics](advanced.md)** - Architecture, PoC
