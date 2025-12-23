@@ -522,6 +522,187 @@ class BlockHeader:
 - Addressed by PoC verification (v2+)
 - Economic penalties for incorrect results
 
+## Transaction Lifecycle (Phase 1.4)
+
+### Transaction States
+
+Every transaction goes through the following lifecycle:
+
+```
+SUBMITTED → PENDING → CONFIRMED / FAILED / EXPIRED
+```
+
+**1. Submitted**
+- Transaction sent via `/tx/send` API
+- Initial validation (signature, nonce, balance)
+- Added to mempool if valid
+
+**2. Pending**
+- Transaction waiting in mempool
+- Not yet included in a block
+- Can be queried via `/tx/{hash}/receipt`
+
+**3. Confirmed**
+- Transaction included in a block
+- State updated (balance transferred, stake recorded, etc.)
+- Receipt available with block height
+
+**4. Failed**
+- Invalid transaction (insufficient balance, invalid nonce)
+- Rejected by validator
+- Error message in receipt
+
+**5. Expired** (Phase 1.4 - NEW!)
+- Transaction not confirmed within TTL (Time-To-Live)
+- Automatically removed from mempool after 1 hour
+- Prevents mempool overflow
+
+### Transaction Receipts
+
+Query transaction status:
+
+```bash
+GET /tx/{tx_hash}/receipt
+
+Response:
+{
+  "tx_hash": "abc123...",
+  "status": "confirmed",      // pending | confirmed | failed
+  "block_height": 12345,
+  "timestamp": 1703347200,
+  "confirmations": 5,          // current_height - block_height + 1
+  "error": null
+}
+```
+
+### TX TTL (Time-To-Live)
+
+**Problem:** Pending transactions could get stuck in mempool forever.
+
+**Solution:** Automatic cleanup after 1 hour (3600 seconds).
+
+**How it works:**
+1. Transaction added to mempool → timestamp recorded
+2. Periodic cleanup (every 30 seconds)
+3. If `age > TTL` → transaction removed and marked as `expired`
+4. Nonce unblocked → user can retry with higher fee
+
+**Benefits:**
+- ✅ Prevents mempool bloat
+- ✅ Unblocks stuck nonces
+- ✅ Improves system performance
+
+## Finality Guarantees
+
+### Instant Finality (Tendermint BFT)
+
+**ComputeChain uses Tendermint consensus** which provides **instant finality**:
+
+**1 block = FINAL** ✅
+
+Once a block is added to the blockchain, it **cannot be reverted** (no reorgs).
+
+### Comparison with Other Blockchains
+
+| Blockchain | Finality Type | Time to Final |
+|------------|---------------|---------------|
+| **Bitcoin** | Probabilistic (6 blocks) | ~60 minutes |
+| **Ethereum PoW** | Probabilistic (12 blocks) | ~3 minutes |
+| **Ethereum PoS** | Casper FFG (2 epochs) | ~15 minutes |
+| **Solana** | Vote-based (~32 blocks) | ~13 seconds |
+| **ComputeChain** | **Instant (Tendermint)** | **0 seconds!** ✅ |
+
+### How Tendermint Finality Works
+
+1. **Proposer** creates block
+2. **Validators** vote on block (2/3+ required)
+3. Block added to chain → **FINAL**
+4. Next block references it → impossible to change
+
+### Byzantine Fault Tolerance
+
+- System safe if < 1/3 validators are Byzantine (malicious)
+- If ≥ 2/3 honest → finality guaranteed
+- No possibility of chain reorganization
+
+### Recommended Confirmations
+
+While 1 confirmation is technically final, exchanges and applications may want extra safety:
+
+```python
+# Normal transfers
+MIN_CONFIRMATIONS = 1  # Instant finality!
+
+# Critical operations (extra paranoia)
+CRITICAL_CONFIRMATIONS = 3  # ~30 seconds
+
+# Large withdrawals (exchange standard)
+EXCHANGE_CONFIRMATIONS = 6  # ~60 seconds
+```
+
+## Gas Model
+
+### Phase 1: Fixed Fee (Current)
+
+ComputeChain currently uses a **simple fixed-fee model**:
+
+```python
+class Transaction:
+    fee: int = 0         # Fixed fee per transaction
+    gas_price: int = 0   # Reserved for Phase 2
+    gas_limit: int = 0   # Reserved for Phase 2
+```
+
+**Why fixed fees?**
+- ✅ Simplicity for MVP
+- ✅ Predictable costs
+- ✅ No fee market competition needed (low TPS)
+
+**Current fee:** Zero or minimal (set by validators)
+
+### Phase 2: Dynamic Gas (Planned)
+
+**EIP-1559 style gas pricing** (Q2 2025+):
+
+```python
+class Transaction:
+    base_fee: int        # Algorithmic (burned 🔥)
+    priority_fee: int    # Tip for validators 💰
+    max_fee: int         # User protection cap 🛡️
+```
+
+**How it will work:**
+
+1. **Base Fee** - Algorithmically adjusted based on block congestion
+   - Blocks > 50% full → base fee increases
+   - Blocks < 50% full → base fee decreases
+   - **Burned** (removed from supply) → deflationary
+
+2. **Priority Fee** - User-set tip for validators
+   - Incentivizes block inclusion
+   - Goes to block proposer
+
+3. **Max Fee Cap** - Protection from fee spikes
+   - TX fails if `base_fee + priority_fee > max_fee`
+
+**Benefits:**
+- ✅ Better fee estimation
+- ✅ Reduced volatility
+- ✅ Deflationary pressure (burned fees)
+
+### Transaction Gas Costs
+
+Reserved for Phase 2 (placeholders):
+
+| Transaction Type | Base Gas |
+|-----------------|----------|
+| TRANSFER | 21,000 |
+| STAKE | 50,000 |
+| UNSTAKE | 50,000 |
+| DELEGATE | 30,000 |
+| COMPUTE_SUBMIT | 100,000 |
+| COMPUTE_RESULT | 150,000 |
+
 ## Next Steps
 
 - **[Validator Guide](validator-guide.md)** - Run a validator node
