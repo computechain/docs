@@ -360,22 +360,100 @@ uptime_score = blocks_signed / total_expected_blocks
 **Нода предоставляет:**
 - `/status` - Текущая высота, эпоха, размер mempool
 - `/validators` - Все валидаторы с оценками uptime
-- `/metrics` (будущее) - Метрики совместимые с Prometheus
+- `/metrics` ✅ **Реализовано** - Метрики совместимые с Prometheus
+
+**Prometheus метрики (Phase 1.3):**
+- `computechain_block_height` - Текущая высота блока
+- `computechain_transactions_total` - Общее количество обработанных транзакций (по типам)
+- `computechain_mempool_size` - Размер mempool
+- `computechain_validator_count` - Количество валидаторов
+- `computechain_total_supply` - Общее предложение в обращении
+- `computechain_total_burned` - Всего сожжено токенов
+- `computechain_total_minted` - Всего отчеканено токенов
+- `computechain_accounts_total` - Количество аккаунтов в сети
+
+**Интеграция Grafana:**
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'computechain'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+```
+
+## Снепшоты состояния
+
+### Система снепшотов (Phase 1.3) ✅ **Реализовано**
+
+**Автоматическое создание:**
+- Каждые N блоков (по умолчанию: 1000)
+- На границах эпох
+- Сжатие gzip (~60-80% уменьшение размера)
+- SHA256 верификация целостности
+
+**Fast Sync:**
+- Загрузка состояния из снепшота
+- Синхронизация <5 минут (вместо часов)
+- Автоматическая очистка (последние 10 снепшотов)
+
+**API эндпоинты:**
+- `GET /snapshots` - Список доступных снепшотов
+- `GET /snapshots/{height}` - Информация о конкретном снепшоте
+
+**CLI команды:**
+- `./cpc-cli snapshot list` - Список снепшотов
+- `./cpc-cli snapshot info <height>` - Детальная информация
+
+**Содержимое снепшота:**
+- Балансы всех аккаунтов
+- Стейки валидаторов и делегации
+- Очередь разблокировки (unbonding queue)
+- История наград
+- Экономическое отслеживание (total_burned, total_minted)
+- Состояние казначейства
 
 ## Обновления протокола
 
-### Процесс Hard Fork (Будущее)
+### Система обновлений (Phase 1.3) ✅ **Реализовано**
 
-1. **Предложение**: Новая версия протокола предложена с высотой
-2. **Сигнализация**: Валидаторы сигнализируют готовность через заголовки блоков
-3. **Активация**: На указанной высоте активируются новые правила
-4. **Миграция**: Состояние мигрируется при необходимости
+**Семантическое версионирование:**
+- MAJOR.MINOR.PATCH (например, 1.0.0)
+- MAJOR - breaking changes
+- MINOR - новые фичи (обратная совместимость)
+- PATCH - багфиксы
 
-### Управление (Планируется)
+**Процесс обновления:**
+1. **Планирование**: UpgradePlan создается с target_version и upgrade_height
+2. **Миграция**: @migration декораторы для миграции состояния
+3. **Выполнение**: На upgrade_height применяются миграции
+4. **Проверка**: Валидация версии и совместимости
+
+**Пример миграции:**
+```python
+from blockchain.upgrade.migrations import migration
+
+@migration(from_version="1.0.0", to_version="1.1.0")
+def migrate_add_new_field(state):
+    # Логика миграции состояния
+    for account in state.accounts.values():
+        if not hasattr(account, 'new_field'):
+            account.new_field = default_value
+```
+
+**Компоненты:**
+- `blockchain/upgrade/manager.py` - UpgradeManager
+- `blockchain/upgrade/types.py` - Version, UpgradePlan, ChainVersion
+- `blockchain/upgrade/migrations.py` - MigrationRegistry
+
+**Статус:** Фреймворк готов, тестирование в testnet (Phase 3)
+
+### Управление (Phase 4 - Планируется)
 
 - Голосование в цепи взвешенное по стейку
 - Изменения параметров (стоимость gas, длина эпохи и т.д.)
-- Обновления протокола
+- Обновления протокола через governance
 
 ## Технические спецификации
 

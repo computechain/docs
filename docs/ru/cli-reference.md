@@ -158,6 +158,63 @@ Epoch      Reward Amount
 2          25.1
 ```
 
+### Разблокировка (Unbonding)
+
+```bash
+./cpc-cli query unbonding <АДРЕС> [--node <URL>]
+```
+
+**Вывод:**
+
+```
+Delegator: cpc1abc...
+Unbonding Entries: 1
+
+Validator                                      Amount    Creation    Completion  Remaining
+------------------------------------------------------------------------------------------------
+cpcvalcons1xyz...                              50.0      1000        1100        45 blocks
+```
+
+**Поля:**
+- `Creation`: Высота блока когда началось разблокирование
+- `Completion`: Высота блока когда токены будут возвращены
+- `Remaining`: Сколько блоков осталось до автоматического возврата
+
+### Снепшоты
+
+```bash
+./cpc-cli snapshot list [--node <URL>]
+```
+
+**Вывод:**
+
+```
+Available Snapshots:
+
+Height    Timestamp             Size        Hash
+---------------------------------------------------------------------------------
+5000      2025-12-23 10:15:30   1.0 MB      abc123def456...
+4000      2025-12-23 09:30:15   0.98 MB     def789ghi012...
+```
+
+```bash
+./cpc-cli snapshot info <ВЫСОТА> [--node <URL>]
+```
+
+**Вывод:**
+
+```
+Snapshot Information:
+  Height: 5000
+  Timestamp: 2025-12-23 10:15:30
+  Size: 1.0 MB
+  Hash: abc123def456...
+  Compressed: true
+  Epoch: 50
+  Validators: 5
+  Accounts: 103
+```
+
 ### Блок
 
 ```bash

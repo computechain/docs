@@ -360,22 +360,100 @@ uptime_score = blocks_signed / total_expected_blocks
 **Node exposes:**
 - `/status` - Current height, epoch, mempool size
 - `/validators` - All validators with uptime scores
-- `/metrics` (future) - Prometheus-compatible metrics
+- `/metrics` ✅ **Implemented** - Prometheus-compatible metrics
+
+**Prometheus metrics (Phase 1.3):**
+- `computechain_block_height` - Current block height
+- `computechain_transactions_total` - Total transactions processed (by type)
+- `computechain_mempool_size` - Mempool size
+- `computechain_validator_count` - Number of validators
+- `computechain_total_supply` - Total supply in circulation
+- `computechain_total_burned` - Total tokens burned
+- `computechain_total_minted` - Total tokens minted
+- `computechain_accounts_total` - Number of accounts in network
+
+**Grafana integration:**
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'computechain'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+```
+
+## State Snapshots
+
+### Snapshot System (Phase 1.3) ✅ **Implemented**
+
+**Automatic creation:**
+- Every N blocks (default: 1000)
+- At epoch boundaries
+- Gzip compression (~60-80% size reduction)
+- SHA256 integrity verification
+
+**Fast Sync:**
+- Load state from snapshot
+- Sync in <5 minutes (instead of hours)
+- Automatic cleanup (keeps last 10 snapshots)
+
+**API endpoints:**
+- `GET /snapshots` - List available snapshots
+- `GET /snapshots/{height}` - Info about specific snapshot
+
+**CLI commands:**
+- `./cpc-cli snapshot list` - List snapshots
+- `./cpc-cli snapshot info <height>` - Detailed information
+
+**Snapshot contents:**
+- All account balances
+- Validator stakes and delegations
+- Unbonding queue
+- Reward history
+- Economic tracking (total_burned, total_minted)
+- Treasury state
 
 ## Protocol Upgrades
 
-### Hard Fork Process (Future)
+### Upgrade System (Phase 1.3) ✅ **Implemented**
 
-1. **Proposal**: New protocol version proposed with height
-2. **Signaling**: Validators signal readiness via block headers
-3. **Activation**: At specified height, new rules activate
-4. **Migration**: State migrated if needed
+**Semantic versioning:**
+- MAJOR.MINOR.PATCH (e.g., 1.0.0)
+- MAJOR - breaking changes
+- MINOR - new features (backward compatible)
+- PATCH - bug fixes
 
-### Governance (Planned)
+**Upgrade process:**
+1. **Planning**: UpgradePlan created with target_version and upgrade_height
+2. **Migration**: @migration decorators for state migration
+3. **Execution**: At upgrade_height, migrations applied
+4. **Validation**: Version and compatibility checks
+
+**Migration example:**
+```python
+from blockchain.upgrade.migrations import migration
+
+@migration(from_version="1.0.0", to_version="1.1.0")
+def migrate_add_new_field(state):
+    # State migration logic
+    for account in state.accounts.values():
+        if not hasattr(account, 'new_field'):
+            account.new_field = default_value
+```
+
+**Components:**
+- `blockchain/upgrade/manager.py` - UpgradeManager
+- `blockchain/upgrade/types.py` - Version, UpgradePlan, ChainVersion
+- `blockchain/upgrade/migrations.py` - MigrationRegistry
+
+**Status:** Framework ready, testing in testnet (Phase 3)
+
+### Governance (Phase 4 - Planned)
 
 - On-chain voting weighted by stake
 - Parameter changes (gas costs, epoch length, etc.)
-- Protocol upgrades
+- Protocol upgrades via governance
 
 ## Technical Specifications
 

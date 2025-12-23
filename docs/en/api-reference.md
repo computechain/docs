@@ -161,6 +161,144 @@ curl http://localhost:8000/delegator/cpc1abc.../rewards
 }
 ```
 
+### GET /delegator/{address}/unbonding
+
+Get unbonding queue for delegator.
+
+```bash
+curl http://localhost:8000/delegator/cpc1abc.../unbonding
+```
+
+**Response:**
+
+```json
+{
+  "delegator": "cpc1abc...",
+  "unbonding_entries": [
+    {
+      "validator": "cpcvalcons1xyz...",
+      "amount": "50000000000000000000",
+      "creation_height": 1000,
+      "completion_height": 1100,
+      "blocks_remaining": 45
+    }
+  ]
+}
+```
+
+**Fields:**
+- `amount`: Amount in wei
+- `creation_height`: Block height when unbonding started
+- `completion_height`: Block height when tokens will be returned
+- `blocks_remaining`: How many blocks until automatic return
+
+## Snapshot Endpoints
+
+### GET /snapshots
+
+Get list of available state snapshots.
+
+```bash
+curl http://localhost:8000/snapshots
+```
+
+**Response:**
+
+```json
+{
+  "snapshots": [
+    {
+      "height": 5000,
+      "timestamp": 1700000000,
+      "size_bytes": 1048576,
+      "hash": "abc123def456...",
+      "compressed": true
+    },
+    {
+      "height": 4000,
+      "timestamp": 1699990000,
+      "size_bytes": 1024000,
+      "hash": "def789ghi012...",
+      "compressed": true
+    }
+  ]
+}
+```
+
+### GET /snapshots/{height}
+
+Get information about specific snapshot.
+
+```bash
+curl http://localhost:8000/snapshots/5000
+```
+
+**Response:**
+
+```json
+{
+  "height": 5000,
+  "timestamp": 1700000000,
+  "size_bytes": 1048576,
+  "hash": "abc123def456...",
+  "compressed": true,
+  "epoch": 50,
+  "validator_count": 5,
+  "account_count": 103
+}
+```
+
+## Observability Endpoints
+
+### GET /metrics
+
+Get Prometheus metrics for monitoring.
+
+```bash
+curl http://localhost:8000/metrics
+```
+
+**Response (Prometheus format):**
+
+```
+# HELP computechain_block_height Current block height
+# TYPE computechain_block_height gauge
+computechain_block_height 1234.0
+
+# HELP computechain_transactions_total Total number of transactions processed
+# TYPE computechain_transactions_total counter
+computechain_transactions_total{tx_type="TRANSFER"} 5000.0
+computechain_transactions_total{tx_type="STAKE"} 150.0
+
+# HELP computechain_mempool_size Current mempool size
+# TYPE computechain_mempool_size gauge
+computechain_mempool_size 10.0
+
+# HELP computechain_total_supply Total supply in circulation
+# TYPE computechain_total_supply gauge
+computechain_total_supply 1.000089145e+27
+
+# HELP computechain_validator_count Number of validators
+# TYPE computechain_validator_count gauge
+computechain_validator_count 5.0
+
+# HELP computechain_accounts_total Total number of accounts
+# TYPE computechain_accounts_total gauge
+computechain_accounts_total 103.0
+```
+
+**Prometheus integration:**
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'computechain'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+```
+
 ## Transaction Endpoints
 
 ### POST /tx/send
