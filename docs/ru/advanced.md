@@ -461,35 +461,56 @@ def migrate_add_new_field(state):
 
 ```python
 class Transaction:
-    tx_type: TxType
-    from_address: str
-    to_address: Optional[str]
-    amount: int
-    fee: int
-    nonce: int
-    gas_price: int
-    gas_limit: int
-    timestamp: int
-    signature: str
-    pub_key: str
-    payload: Dict
+    tx_type: TxType              # Тип транзакции (TRANSFER, STAKE и т.д.)
+    from_address: str            # Адрес отправителя (cpc1...)
+    to_address: Optional[str]    # Адрес получателя (None для STAKE)
+    amount: int                  # Сумма в минимальных единицах (10^-18 CPC)
+    fee: int                     # Комиссия (Фаза 1: фиксированная, Фаза 2: gas_price * gas_limit)
+    nonce: int                   # Nonce аккаунта (предотвращает повтор)
+    signature: str               # ECDSA подпись (hex)
+    pub_key: str                 # Публичный ключ (hex)
+    payload: Dict[str, Any]      # Дополнительные данные (информация о задаче, метаданные)
+
+    # Поля для газа (для совместимости, применяются в Фазе 2)
+    gas_price: int = 0           # Wei за единицу газа
+    gas_limit: int = 0           # Максимум газа
 ```
+
+**Важно:** Поле `timestamp` НЕ существует в Transaction - используется timestamp блока.
 
 ### Структура блока
 
 ```python
 class BlockHeader:
-    height: int
-    timestamp: int
-    prev_hash: str
-    proposer_address: str
-    tx_root: str
-    state_root: str
-    compute_root: str
-    chain_id: str
-    signature: str
-    pub_key: str
+    height: int                  # Номер блока
+    prev_hash: str               # SHA256 хеш предыдущего блока (hex)
+    timestamp: int               # Unix timestamp (секунды)
+    chain_id: str                # ID сети (например, "cpc-devnet-1")
+    proposer_address: str        # Адрес валидатора (cpcvalcons1...)
+
+    # Merkle корни
+    tx_root: str                 # Merkle корень всех транзакций
+    state_root: str              # Merkle корень состояния аккаунтов
+    compute_root: str            # Merkle корень результатов вычислений (PoC)
+
+    # Отслеживание газа (Фаза 2)
+    gas_used: int                # Всего газа использовано в блоке
+    gas_limit: int               # Максимум газа на блок
+
+    # ZK Доказательства (заглушки для Фазы 3)
+    zk_state_proof_hash: Optional[str]    # Zero-knowledge доказательство состояния
+    zk_compute_proof_hash: Optional[str]  # ZK доказательство корректности вычислений
+
+class Block:
+    header: BlockHeader          # Заголовок блока (хешируется для ID блока)
+    txs: List[Transaction]       # Список транзакций
+
+    # Пост-квантовая подпись (подписана proposer'ом)
+    pq_signature: str            # Подпись Dilithium3 (hex)
+    pq_sig_scheme_id: int        # ID схемы подписи (1 = Dilithium3)
 ```
+
+**Важно:** Подпись блока хранится в `Block.pq_signature`, А НЕ в `BlockHeader`. Сам заголовок не содержит полей signature/pub_key.
 
 ### Протокол P2P
 
@@ -692,16 +713,18 @@ class Transaction:
 
 ### Стоимость газа для транзакций
 
-Зарезервировано для Phase 2 (плейсхолдеры):
+Зарезервировано для Phase 2 (из `protocol/config/params.py`):
 
 | Тип транзакции | Базовый газ |
 |----------------|-------------|
 | TRANSFER | 21,000 |
-| STAKE | 50,000 |
-| UNSTAKE | 50,000 |
-| DELEGATE | 30,000 |
-| COMPUTE_SUBMIT | 100,000 |
-| COMPUTE_RESULT | 150,000 |
+| STAKE | 40,000 |
+| UNSTAKE | 40,000 |
+| DELEGATE | 35,000 |
+| UNDELEGATE | 35,000 |
+| SUBMIT_RESULT | 80,000 |
+| UPDATE_VALIDATOR | 30,000 |
+| UNJAIL | 50,000 |
 
 ## Следующие шаги
 

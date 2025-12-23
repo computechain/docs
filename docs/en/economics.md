@@ -107,9 +107,9 @@ Total Fees = gas_used * gas_price
 | UNSTAKE | 40,000 |
 | DELEGATE | 35,000 |
 | UNDELEGATE | 35,000 |
-| UNJAIL | 50,000 |
+| SUBMIT_RESULT | 80,000 |
 | UPDATE_VALIDATOR | 30,000 |
-| SUBMIT_RESULT (PoC) | 80,000 |
+| UNJAIL | 50,000 |
 
 ---
 
@@ -380,6 +380,6 @@ DEVNET = EconomicConfig(
 
 ---
 
-**Last Updated:** December 17, 2025
+**Last Updated:** December 23, 2024
 **Economic Model Version:** v2.0
-**Implementation:** Phase 1.2 Complete
+**Implementation:** Phase 1.4 Complete

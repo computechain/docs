@@ -63,19 +63,24 @@ open http://localhost:8000
 
 ## Key Features
 
-- ✅ **Multi-Validator PoA** - Round-robin block production
+- ✅ **Tendermint BFT Consensus** - Byzantine Fault Tolerant, instant finality
 - ✅ **Delegation & Rewards** - Delegate tokens, earn proportional rewards
-- ✅ **Commission Model** - Validators earn 10% commission (configurable)
-- ✅ **Performance Tracking** - Uptime scoring, automated jailing
-- ✅ **Graduated Slashing** - Progressive penalties (5% → 10% → 100%)
-- ✅ **Post-Quantum Ready** - PQ signature architecture
+- ✅ **Commission Model** - Validators earn commission (max 20%, configurable)
+- ✅ **Validator Management** - Automated jailing for downtime
+- ✅ **Slashing Protection** - Economic penalties for misbehavior (5% base rate)
+- ✅ **Post-Quantum Ready** - Dilithium3 (PQ) signature scheme
 
 ## Network Info
 
-**Testnet:**
-- Chain ID: `computechain-testnet-1`
-- RPC: `https://rpc.testnet.computechain.space`
-- Explorer: `https://explorer.testnet.computechain.space`
+**Devnet (Local):**
+- Chain ID: `cpc-devnet-1`
+- RPC: `http://localhost:8000`
+- Metrics: `http://localhost:8000/metrics`
+
+**Testnet (Coming Soon):**
+- Chain ID: `cpc-testnet-1`
+- RPC: TBA
+- Explorer: TBA
 
 ## Support
 

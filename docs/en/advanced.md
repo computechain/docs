@@ -461,35 +461,56 @@ def migrate_add_new_field(state):
 
 ```python
 class Transaction:
-    tx_type: TxType
-    from_address: str
-    to_address: Optional[str]
-    amount: int
-    fee: int
-    nonce: int
-    gas_price: int
-    gas_limit: int
-    timestamp: int
-    signature: str
-    pub_key: str
-    payload: Dict
+    tx_type: TxType              # Transaction type (TRANSFER, STAKE, etc.)
+    from_address: str            # Sender address (cpc1...)
+    to_address: Optional[str]    # Recipient (None for STAKE)
+    amount: int                  # Amount in minimal units (10^-18 CPC)
+    fee: int                     # Transaction fee (Phase 1: fixed, Phase 2: gas_price * gas_limit)
+    nonce: int                   # Account nonce (prevents replay)
+    signature: str               # ECDSA signature (hex)
+    pub_key: str                 # Public key (hex)
+    payload: Dict[str, Any]      # Extra data (task info, metadata)
+
+    # Gas fields (for compatibility, enforced in Phase 2)
+    gas_price: int = 0           # Wei per gas unit
+    gas_limit: int = 0           # Max gas allowed
 ```
+
+**Note:** `timestamp` field does NOT exist in Transaction - block timestamp is used instead.
 
 ### Block Structure
 
 ```python
 class BlockHeader:
-    height: int
-    timestamp: int
-    prev_hash: str
-    proposer_address: str
-    tx_root: str
-    state_root: str
-    compute_root: str
-    chain_id: str
-    signature: str
-    pub_key: str
+    height: int                  # Block number
+    prev_hash: str               # SHA256 hash of previous block (hex)
+    timestamp: int               # Unix timestamp (seconds)
+    chain_id: str                # Network ID (e.g., "cpc-devnet-1")
+    proposer_address: str        # Validator address (cpcvalcons1...)
+
+    # Merkle roots
+    tx_root: str                 # Merkle root of all transactions
+    state_root: str              # Merkle root of account state
+    compute_root: str            # Merkle root of compute results (PoC)
+
+    # Gas tracking (Phase 2)
+    gas_used: int                # Total gas consumed in block
+    gas_limit: int               # Maximum gas allowed per block
+
+    # ZK Proofs (Phase 3 placeholders)
+    zk_state_proof_hash: Optional[str]    # Zero-knowledge proof of state
+    zk_compute_proof_hash: Optional[str]  # ZK proof of compute correctness
+
+class Block:
+    header: BlockHeader          # Block header (hashed for block ID)
+    txs: List[Transaction]       # List of transactions
+
+    # Post-Quantum Signature (signed by proposer)
+    pq_signature: str            # Dilithium3 signature (hex)
+    pq_sig_scheme_id: int        # Signature scheme ID (1 = Dilithium3)
 ```
+
+**Important:** Block signature is stored in `Block.pq_signature`, NOT in `BlockHeader`. The header itself does not contain signature/pub_key fields.
 
 ### P2P Protocol
 
@@ -692,16 +713,18 @@ class Transaction:
 
 ### Transaction Gas Costs
 
-Reserved for Phase 2 (placeholders):
+Reserved for Phase 2 (placeholders from `protocol/config/params.py`):
 
 | Transaction Type | Base Gas |
 |-----------------|----------|
 | TRANSFER | 21,000 |
-| STAKE | 50,000 |
-| UNSTAKE | 50,000 |
-| DELEGATE | 30,000 |
-| COMPUTE_SUBMIT | 100,000 |
-| COMPUTE_RESULT | 150,000 |
+| STAKE | 40,000 |
+| UNSTAKE | 40,000 |
+| DELEGATE | 35,000 |
+| UNDELEGATE | 35,000 |
+| SUBMIT_RESULT | 80,000 |
+| UPDATE_VALIDATOR | 30,000 |
+| UNJAIL | 50,000 |
 
 ## Next Steps
 
