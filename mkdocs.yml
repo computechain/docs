@@ -69,6 +69,7 @@ nav:
   - CLI Reference: cli-reference.md
   - API Reference: api-reference.md
   - Advanced Topics: advanced.md
+  - Development Log: development-log.md
 
 plugins:
   - search
