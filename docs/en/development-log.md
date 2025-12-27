@@ -4,6 +4,71 @@
 
 ---
 
+## December 27, 2025 - Pending Queue Promotion Deadlock Fix
+
+### Critical Bug in Nonce-Aware Mempool ✅
+
+**Problem Discovered:** Medium load test (24h) stalled at 98k transactions after 2 hours of running.
+
+**Symptoms:**
+- Confirmations stopped at 98,044 TX (December 26, 17:58:37)
+- Following 12+ hours: 0 new confirmations
+- Mempool empty (0 TX), but tx_generator shows 1,100 pending
+- All new blocks created empty (0 TX)
+- NonceManager: 79,000+ resyncs with no progress
+- Event confirmations: 0 (no events received)
+
+**Root Cause Analysis:**
+
+The promotion code had a **vicious cycle**:
+```python
+# BUG: only promote addresses from processed transactions
+sender_addresses = {tx.from_address for tx in txs}
+for address in sender_addresses:
+    mempool._promote_from_pending(address, state)
+```
+
+**Deadlock Mechanism:**
+1. All TX in mempool processed
+2. New TX stuck in `pending_queue` (future nonces)
+3. Next block created with `txs = []` (empty mempool)
+4. `sender_addresses = {}` — **promotion NOT called!**
+5. Pending queue remains unprocessed
+6. Mempool stays empty → repeat from step 3 → **infinite loop**
+
+**Why the Problem Wasn't Obvious:**
+- Under high load, mempool always had TX with correct nonces
+- Once all "ready" TX were processed, system got stuck
+- New TX couldn't be promoted from pending_queue
+
+**Solution:**
+```python
+# FIX: promote ALL addresses from pending_queue
+if hasattr(mempool, 'pending_queue'):
+    for address in list(mempool.pending_queue.keys()):
+        mempool._promote_from_pending(address, state)
+```
+
+**Modified Files:**
+- `blockchain/consensus/proposer.py` - Local block creation
+- `blockchain/cli/node_cli.py` - P2P block reception
+
+**Key Difference:**
+- **Before:** Promotion only for addresses that were in processed TX
+- **After:** Promotion for ALL addresses in pending_queue after each block
+
+**Expected Result:**
+- Pending queue will be regularly processed even with empty blocks
+- Transactions with future nonces will be promoted when blockchain state catches up
+- No deadlock when mempool is empty
+- Stable transaction processing in long-term tests
+
+**Commit:** `fix pending queue promotion deadlock: promote ALL addresses in pending_queue after each block, not just processed TX senders`
+
+**Status:** Ready for re-testing (24h medium/high load)
+
+---
+
 ## December 25, 2025 - EventBus Cross-Process Fix
 
 ### SSE Event System Final Fix ✅

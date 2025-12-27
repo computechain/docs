@@ -4,6 +4,71 @@
 
 ---
 
+## 27 декабря 2025 - Исправление deadlock pending queue promotion
+
+### Критический баг в nonce-aware mempool ✅
+
+**Проблема обнаружена:** Тест на medium нагрузке (24h) останавливался на 98k транзакций через 2 часа после старта.
+
+**Симптомы:**
+- Подтверждения остановились на 98,044 TX (26 декабря 17:58:37)
+- Последующие 12+ часов: 0 новых подтверждений
+- Mempool пустой (0 TX), но tx_generator показывает 1,100 pending
+- Все новые блоки создаются пустыми (0 TX)
+- NonceManager: 79,000+ resyncs без прогресса
+- Event confirmations: 0 (события не приходят)
+
+**Анализ первопричины:**
+
+Код promotion имел **порочный круг**:
+```python
+# БАГ: промоушен только для адресов из обработанных TX
+sender_addresses = {tx.from_address for tx in txs}
+for address in sender_addresses:
+    mempool._promote_from_pending(address, state)
+```
+
+**Механизм deadlock:**
+1. Все TX в mempool обработаны
+2. Новые TX застряли в `pending_queue` (future nonces)
+3. Следующий блок создается с `txs = []` (пустой mempool)
+4. `sender_addresses = {}` — **промоушен НЕ вызывается!**
+5. Pending queue остается необработанным
+6. Mempool пустой → повтор с шага 3 → **бесконечный цикл**
+
+**Почему проблема не проявлялась раньше:**
+- При высокой нагрузке mempool всегда имел TX с правильными nonces
+- Как только обработали все "готовые" TX, система застревала
+- Новые TX не могли быть промоутнуты из pending_queue
+
+**Решение:**
+```python
+# ИСПРАВЛЕНИЕ: промоутим ВСЕ адреса из pending_queue
+if hasattr(mempool, 'pending_queue'):
+    for address in list(mempool.pending_queue.keys()):
+        mempool._promote_from_pending(address, state)
+```
+
+**Изменённые файлы:**
+- `blockchain/consensus/proposer.py` - Local block creation
+- `blockchain/cli/node_cli.py` - P2P block reception
+
+**Ключевое отличие:**
+- **До:** Промоушен только для адресов, которые были в обработанных TX
+- **После:** Промоушен для ВСЕХ адресов в pending_queue после каждого блока
+
+**Ожидаемый результат:**
+- Pending queue будет регулярно обрабатываться даже при пустых блоках
+- Транзакции с future nonces будут промоутиться когда blockchain state догонит
+- Никакого deadlock при пустом mempool
+- Стабильная обработка транзакций в долгосрочных тестах
+
+**Коммит:** `fix pending queue promotion deadlock: promote ALL addresses in pending_queue after each block, not just processed TX senders`
+
+**Статус:** Готово к повторному тестированию (24h medium/high load)
+
+---
+
 ## 26 декабря 2025 - Упрощение тестовой инфраструктуры (Phase 1.4.1)
 
 ### SSE queue overflow + упрощение tx_generator ✅
