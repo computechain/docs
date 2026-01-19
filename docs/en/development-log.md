@@ -4,6 +4,12 @@
 
 ---
 
+## January 19, 2026 — Sync reliability and receipt indexing
+
+Improved P2P sync (header range + snapshot chunks), added tx index fallback for receipts, and tightened state/tx determinism (tx hash fields + state_root coverage).
+
+---
+
 ## January 12, 2026 — Final pending state fix
 
 Fixed pending_state synchronization after local block creation. Proposer now calls `update_pending_state()` immediately after adding block to chain. This ensures correct pending nonce for subsequent transactions.
