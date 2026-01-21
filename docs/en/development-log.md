@@ -4,6 +4,31 @@
 
 ---
 
+## January 21, 2026 — Deterministic slots and consensus stability
+
+Critical update to slot system and block production:
+
+- **genesis_time**: Now persisted to DB and used as absolute reference for slot calculation
+- **max_rounds_per_height**: Round limit (devnet=10, testnet=42, mainnet=200) prevents infinite round growth
+- **Deterministic slots**: Removed monotonic/drift timestamp checks, slot computed strictly from genesis_time
+- **missed_blocks guards**: Protection against accumulation on large time gaps + winner exclusion from missed
+- **blocks_expected**: Now set for slot-0 proposers at epoch start
+- **BlockValidator**: Added slot validation for incoming blocks
+
+---
+
+## January 20, 2026 — Relaxed validator scoring parameters
+
+Fixed aggressive validator jailing issue:
+
+- **epoch_length_blocks**: 10 → 100 (more time for stats accumulation)
+- **min_uptime_score**: 0.75 → 0.5 (allows 50% miss rate)
+- **max_missed_blocks_sequential**: 10 → 20 (more tolerance before jail)
+
+These changes prevent premature validator exclusion due to short-term network delays.
+
+---
+
 ## January 19, 2026 — Sync reliability and receipt indexing
 
 Improved P2P sync (header range + snapshot chunks), added tx index fallback for receipts, and tightened state/tx determinism (tx hash fields + state_root coverage).
@@ -135,6 +160,7 @@ First ComputeChain commit. Core: blocks, TX (TRANSFER/STAKE), ECDSA signatures, 
 - **Period:** November 2025 — January 2026
 - **Current TPS:** 50-60 (stable)
 - **Block time:** 5 sec
+- **Epoch:** 100 blocks (~8 minutes)
 - **Tests:** 25+ (all passing)
 
-**Last updated:** January 12, 2026
+**Last updated:** January 21, 2026
