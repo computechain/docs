@@ -43,7 +43,8 @@ Harness проверяет full/catch-up/verified state sync, прогресс �
 - `computechain`: protocol/application, launcher, load и fault tests.
 - `monitoring`: сбор метрик, Prometheus, Grafana.
 - `docs`: эта компактная английская/русская документация.
-- `explorer` и `website`: отдельные интерфейсы, не проверенная v3 wallet/API-интеграция.
+- `explorer`: read-only Comet v3 observer, собственный SQLite index и Next.js UI;
+  не wallet и не независимый light client. `website`: локальный EN/RU обзор.
 
 Исходники — источник истины. При изменении поведения обновляйте оба языка;
 экспериментальные цифры и отключённые функции явно отмечайте. Старые инструкции

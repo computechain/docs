@@ -64,7 +64,7 @@ query Merkle proofs и historical state пока не реализованы.
 
 ## Граница legacy
 
-Старые Python consensus, FastAPI API, staking CLI и explorer не являются
+Старые Python consensus, FastAPI API и staking CLI не являются
 интеграцией v3. Непроверенные PoC submissions/payouts и несогласованные изменения
 комиссии отключены. Legacy network запускается только с явным unsafe opt-in.
 

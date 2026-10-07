@@ -64,7 +64,7 @@ Native RPC is on the host at `127.0.0.1:28601` by default (`/status`, `/block`,
 
 ## Legacy boundary
 
-The old Python consensus, FastAPI API, staking CLI and explorer are not the v3
+The old Python consensus, FastAPI API and staking CLI are not the v3
 integration. Unverified PoC submissions/payouts and unscheduled commission changes
 are disabled. Legacy network startup requires an explicit unsafe opt-in.
 

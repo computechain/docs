@@ -43,7 +43,8 @@ The report is `<devnet>/verification.json`.
 - `computechain`: protocol/application, local launcher, load and fault tests.
 - `monitoring`: collection, Prometheus, Grafana.
 - `docs`: this compact English/Russian guide.
-- `explorer` and `website`: separate interfaces, not a verified v3 wallet/API.
+- `explorer`: read-only Comet v3 observer with its own SQLite index and Next.js UI;
+  not a wallet or independent light client. `website`: EN/RU local overview.
 
 Source is authoritative. Update both languages when behavior changes; keep
 experimental numbers and disabled features clearly labelled. Old instructions

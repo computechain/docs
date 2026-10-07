@@ -94,6 +94,21 @@ tail -f ../.runtime/comet-staking-devnet/load.log
 Существующий каталог использует сохранённые network/monitoring settings.
 Подробности реализации — в `COMETBFT.md` репозитория блокчейна.
 
+## Локальные интерфейсы
+
+- [Сайт](http://192.168.0.100:8080/): EN/RU обзор и наблюдаемый статус сети.
+- [Explorer](http://192.168.0.100:4000/): native blocks/TX, аккаунты, валидаторы и поиск.
+- [Документация](http://192.168.0.100:8008/) / [русская версия](http://192.168.0.100:8008/ru/).
+
+Обычный `up` включает все три. Команды: `docs-up`, `website-up`, `explorer-up`
+и варианты `-down`, `-status`, `-logs`; они не перезапускают цепь. После правки
+Markdown повторите `docs-up`. `cleanup.sh` останавливает интерфейсы, сохраняя
+данные. `--no-docs` / `--no-web` пропускают запуск; `--docs-port`, `--website-port`,
+`--explorer-port` выбирают UI-порты. В LAN открыты только read-only UI gateways;
+explorer backend/frontend и native RPC остаются loopback.
+Explorer — наблюдатель, не независимое доказательство: высота индекса и текущего
+account state могут различаться и явно показаны в интерфейсе.
+
 ## Stake и делегирование тестовых средств
 
 ```bash

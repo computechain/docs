@@ -94,6 +94,21 @@ For another stand use `--dir`, `--base-port`, `--grafana-port` and
 Existing directories use their saved network/monitoring settings.
 For implementation details see the blockchain repository's `COMETBFT.md`.
 
+## Local interfaces
+
+- [Website](http://192.168.0.100:8080/): EN/RU overview and observed network status.
+- [Explorer](http://192.168.0.100:4000/): native blocks/transactions, accounts, validators and search.
+- [Docs](http://192.168.0.100:8008/) / [Russian docs](http://192.168.0.100:8008/ru/).
+
+Normal `up` starts all three. Each has `docs-up`, `website-up`, `explorer-up`
+and matching `-down`, `-status`, `-logs` commands; these do not restart the chain.
+Run `docs-up` to rebuild after editing Markdown. `cleanup.sh` stops all interfaces
+and preserves data. `--no-docs` / `--no-web` skip startup; `--docs-port`,
+`--website-port`, `--explorer-port` select UI ports. Only read-only UI gateways
+bind LAN; explorer processes and native RPC remain loopback.
+Explorer is an observer, not independent proof: indexed-history totals and
+account state may have different heights, clearly shown in its banner.
+
 ## Stake and delegate (local test funds)
 
 ```bash
