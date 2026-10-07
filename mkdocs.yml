@@ -1,75 +1,32 @@
-site_name: ComputeChain Docs
-site_description: Documentation for ComputeChain - Proof-of-Compute Blockchain
-site_author: ComputeChain Team
+site_name: ComputeChain
+site_description: Current devnet, architecture and development priorities
 site_url: https://docs.computechain.space
-
-repo_name: computechain/computechain
-repo_url: https://github.com/computechain/computechain
+repo_name: computechain/docs
+repo_url: https://github.com/computechain/docs
 edit_uri: edit/main/docs/
 
 theme:
   name: material
   language: en
+  font: false
   features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - search.suggest
-    - search.highlight
     - content.code.copy
-    - content.code.annotate
+    - navigation.top
   palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-
-extra:
-  alternate:
-    - name: English
-      link: .
-      lang: en
-    - name: Русский
-      link: ./ru/
-      lang: ru
+    scheme: default
+    primary: indigo
 
 markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
   - admonition
-  - pymdownx.details
-  - pymdownx.tabbed:
-      alternate_style: true
-  - tables
+  - pymdownx.superfences
   - toc:
       permalink: true
 
-# Navigation (Apply to all languages, plugin resolves paths)
 nav:
-  - Home: index.md
-  - Economics: economics.md
-  - Staking Guide: staking-guide.md
-  - Validator Guide: validator-guide.md
-  - CLI Reference: cli-reference.md
-  - API Reference: api-reference.md
-  - Advanced Topics: advanced.md
-  - Development Log: development-log.md
+  - Overview: index.md
+  - Run the devnet: devnet.md
+  - Architecture: architecture.md
+  - Development: development.md
 
 plugins:
   - search
@@ -83,3 +40,9 @@ plugins:
         - locale: ru
           name: Русский
           build: true
+          site_description: Актуальный стенд, архитектура и приоритеты разработки
+          nav_translations:
+            Overview: Обзор
+            Run the devnet: Запуск стенда
+            Architecture: Архитектура
+            Development: Разработка

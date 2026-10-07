@@ -1,89 +1,38 @@
-# ComputeChain Documentation
+# ComputeChain
 
-> Layer-1 blockchain with Proof-of-Compute (PoC) and validator staking
+ComputeChain is an experimental blockchain for a useful-compute market:
+users pay for computation, GPU workers execute tasks, and verified results
+should determine rewards in CPC.
 
-## Quick Start
+**Today:** a local CometBFT devnet with signed transfers, stake/delegation and tested synchronization.
+It is not a production network or a finished compute marketplace.
+This guide describes the current v3 checkout, as of 7 October 2026.
 
-### Install & Run Node
+## Participants
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+- **Users:** submit transfers now; purchasing compute is planned.
+- **L1 validators:** agree on blocks and execute the same application rules.
+- **Full nodes:** verify/synchronize the ledger without consensus voting.
+- **Compute workers:** intended to perform GPU jobs off-chain.
+- **Compute evaluators:** intended to verify useful work/results. This role is
+  separate from L1 validation.
+- **Stakers/delegators:** lock CPC to back validators. Protocol rewards are not
+  enabled yet; consensus-key ownership and withdrawals are enforced.
 
-# Initialize node
-./run_node.py --datadir .node init
+Compute work is not classic hash-mining Proof-of-Work and does not replace BFT
+finality. Stake drives voting power; validator changes take effect at H+2.
+Genesis starts with four validators, but their set is no longer fixed.
 
-# Start node
-./run_node.py --datadir .node start
+## Working versus planned
 
-# Open dashboard
-open http://localhost:8000
-```
+Working: canonical signed transfers/staking, delayed unbonding, verified-evidence
+slashing, atomic application storage, full/catch-up
+sync, verified snapshot state sync, a multi-node fault harness, load testing,
+Prometheus and Grafana.
 
-### Create Wallet
+Not enabled: rewards/emission, compute submissions
+and payouts, genuine PoC/ZK verification, production wallet/explorer integration.
+Legacy code is not evidence that these features work in v3.
 
-```bash
-# Create key
-./cpc-cli keys add mykey
-
-# Check balance
-./cpc-cli query balance <YOUR_ADDRESS>
-```
-
-### Become Validator
-
-```bash
-# Stake 100 CPC (minimum)
-./cpc-cli tx stake 100 --from mykey
-
-# Check validator status
-./cpc-cli query validators
-```
-
-### Delegate to Validator
-
-```bash
-# Delegate tokens to earn rewards
-./cpc-cli tx delegate <VALIDATOR_ADDRESS> <AMOUNT> --from mykey
-
-# Check your delegations
-./cpc-cli query delegations <YOUR_ADDRESS>
-
-# Check rewards
-./cpc-cli query rewards <YOUR_ADDRESS>
-```
-
-## Documentation
-
-- **[Staking Guide](staking-guide.md)** - Stake, delegate, earn rewards
-- **[Validator Guide](validator-guide.md)** - Run validator, manage lifecycle
-- **[CLI Reference](cli-reference.md)** - Complete CLI commands
-- **[API Reference](api-reference.md)** - RPC endpoints
-- **[Advanced Topics](advanced.md)** - PoC, tokenomics, architecture
-
-## Key Features
-
-- ✅ **Tendermint BFT Consensus** - Byzantine Fault Tolerant, instant finality
-- ✅ **Delegation & Rewards** - Delegate tokens, earn proportional rewards
-- ✅ **Commission Model** - Validators earn commission (max 20%, configurable)
-- ✅ **Validator Management** - Automated jailing for downtime
-- ✅ **Slashing Protection** - Economic penalties for misbehavior (5% base rate)
-- ✅ **Post-Quantum Ready** - Dilithium3 (PQ) signature scheme
-
-## Network Info
-
-**Devnet (Local):**
-- Chain ID: `cpc-devnet-1`
-- RPC: `http://localhost:8000`
-- Metrics: `http://localhost:8000/metrics`
-
-**Testnet (Coming Soon):**
-- Chain ID: `cpc-testnet-1`
-- RPC: TBA
-- Explorer: TBA
-
-## Support
-
-- **GitHub:** [github.com/computechain/computechain](https://github.com/computechain/computechain)
-- **Issues:** Report bugs via GitHub Issues
-- **Discord:** [discord.gg/computechain](https://discord.gg/computechain)
+Start with [the devnet guide](devnet.md). Read [architecture](architecture.md)
+for the trust model and [development](development.md) for the next priorities.
