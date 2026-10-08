@@ -55,8 +55,15 @@ This protects crash recovery, not an arbitrary rollback of signing state.
 Full sync starts from genesis. Catch-up restores an offline node. State sync uses
 a trusted checkpoint and native verified headers/AppHash before accepting a
 bounded snapshot. A file checksum alone is not trust. Current checkpoints are
-chosen from locally controlled nodes; public bootstrap trust is not solved.
-Local trust period is 30 seconds, below the 60-second unbonding floor.
+explicitly exported from locally controlled nodes. Bootstrap requires that file
+and two distinct matching witnesses. An unavailable witness may be replaced from
+the operator's list; contradictory replies, wrong genesis and expired anchors
+stop startup without resetting state. RPC agreement does not make an anchor trusted;
+WAN bootstrap uses operator-signed checkpoints and pinned TLS readers; permissionless
+trust discovery is not implemented. The fixed local trust period is
+30 seconds, below the 60-second unbonding floor. Do not extend it to bypass expiry.
+Hard-crash tests cover pre/post-commit replay and interrupted snapshot loading;
+partial chunks never become committed state, and a fresh verified offer is required.
 
 Native RPC is on the host at `127.0.0.1:28601` by default (`/status`, `/block`,
 `/tx`, `/abci_query`). Current application query paths are `/state` and

@@ -39,25 +39,31 @@ python3 scripts/setup_comet.py
 Для restart нельзя удалять или откатывать validator signing state.
 Отдельный эксперимент создавайте с новым `--dir`.
 
-Без Docker: `./start_test.sh up --no-monitoring`.
+Без Docker: `./start_test.sh up --no-monitoring --no-docs --no-web`.
 Мониторинг можно добавить позже: `./start_test.sh monitoring-up`.
 
 ## Мониторинг по локальной сети
 
 На текущем хосте:
 
-- [Grafana](http://192.168.0.100:3000/d/computechain-v2)
+- [Grafana — WAN fleet](http://192.168.0.100:3000/d/computechain-fleet)
 - [Prometheus](http://192.168.0.100:9090)
 
 SSH-туннель не нужен. Launcher определяет и сохраняет private LAN IPv4;
 можно указать его явно: `--monitoring-host 192.168.0.100`.
 Логин Grafana — `admin`; случайный пароль хранится в
 `/root/computechain/.runtime/comet-staking-devnet/monitoring/monitoring.env` (0600).
+С прежней учётной записью/volumes теперь наблюдается `cpc-multisite-devnet-1`, все
+семь узлов. Remote observations идут через pinned TLS readers; native metrics/ABCI
+измеряются только локально. TPS/supply не суммируются по репликам. Alerts видны
+в Grafana/Prometheus, внешние уведомления не настроены. Explorer/website тоже
+наблюдают WAN chain через full-a1 с отдельным genesis-bound индексом; старая история
+сохранена. Команды load ниже всё ещё нагружают старую локальную цепь, не WAN fleet.
 
 Grafana/Prometheus привязаны к выбранному LAN-адресу для доверенной локальной сети.
 Grafana требует входа; у Prometheus нет LAN-аутентификации. Не пробрасывайте эти
 HTTP-сервисы в Интернет. NAT не делает клиентов локальной сети доверенными.
-ABCI, node RPC, P2P и exporters метрик остаются на loopback.
+Native ABCI/RPC и exporters остаются loopback; WAN P2P имеет отдельные scoped ACL.
 
 ## Нагрузка подписанными переводами
 
@@ -108,6 +114,36 @@ Markdown повторите `docs-up`. `cleanup.sh` останавливает �
 explorer backend/frontend и native RPC остаются loopback.
 Explorer — наблюдатель, не независимое доказательство: высота индекса и текущего
 account state могут различаться и явно показаны в интерфейсе.
+
+## Новый follower через state sync
+
+Отдельный multisite devnet из семи узлов работает на трёх хостах; прежний стенд/UI
+не изменён. Управление на каждом хосте: `sudo ~/computechain-node/node.sh status`
+(`up`, `down`, `logs`; можно добавить имя узла). Данные/ключи остаются в этом каталоге.
+Межлокационный P2P теперь идёт по белым WAN-адресам; WG остаётся для администрирования.
+Проверены full sync, mesh всех6узлов, переводы и рестарты; genesis, keys и история
+сохранены. Проброшены P2P и ограниченные TLS readers27626/27636, никогда native
+RPC/ABCI/мониторинг. Новый full-a3 восстановил snapshot через WAN примерно за14s;
+block/AppHash, балансы и nonce совпали у всех семи узлов. Рестарт после expiry
+checkpoint прошёл без нового доверия или замены ключей/данных. Работают четыре
+валидатора и три full nodes. Физические отказы и длительную стабильность ещё
+предстоит проверить. Это не production.
+Checkpoint действует30s; validator/history reset и публикации native RPC нет.
+Подробности: core `MULTISITE.md`.
+
+Из core repository, при работающей собственной локальной сети:
+
+```bash
+./start_test.sh checkpoint --checkpoint ../.runtime/comet-staking-devnet/checkpoint-01.json --witnesses 0 1 2
+./start_test.sh state-sync --node 5 --checkpoint ../.runtime/comet-staking-devnet/checkpoint-01.json --witnesses 0 1 2
+```
+
+Выбирайте новое имя: export не перезаписывает anchor. Тестовый trust window —
+всего 30 секунд; после expiry нужен свежий доверенный файл, не увеличение срока.
+Допускаются только свежие non-genesis followers; история/signing state сохраняются.
+Неудачный partial bootstrap требует инспекции, не автоматического reset.
+Обычные offline-ноды используют restart/catch-up. Отчёт —
+`<devnet>/state-sync-nodeN.json`; совпадение RPC-ответов не удостоверяет checkpoint.
 
 ## Stake и делегирование тестовых средств
 

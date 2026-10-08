@@ -54,9 +54,16 @@ state, height, receipts и snapshots; writer lock исключает второ�
 
 Full sync начинает от genesis. Catch-up догоняет историю после offline. State sync
 проверяет native headers/AppHash от trusted checkpoint до приёма bounded snapshot.
-Checksum файла сам по себе не создаёт доверия. Сейчас checkpoints выбираются
-из собственных локальных нод; доверенный bootstrap публичной сети ещё не решён.
-Локальный trust period — 30 секунд, меньше минимальных 60 секунд unbonding.
+Checksum файла сам по себе не создаёт доверия. Checkpoint явно экспортируется
+из собственных нод. Bootstrap требует этот файл
+и два различных совпадающих witness. Недоступный источник можно заменить из
+списка оператора; противоречие, чужой genesis или просроченный anchor останавливают
+запуск без reset. Совпадение RPC-ответов само по себе не создаёт доверия;
+WAN bootstrap использует operator-signed checkpoint и pinned TLS readers;
+permissionless trust discovery не реализован. Фиксированный local
+trust period — 30 секунд, меньше минимальных 60 секунд unbonding; увеличивать его
+для обхода expiry нельзя. Проверки жёсткого падения покрывают replay до/после Commit
+и прерванный snapshot: неполные chunks не публикуются, нужен новый verified offer.
 
 Native RPC на хосте по умолчанию — `127.0.0.1:28601` (`/status`, `/block`,
 `/tx`, `/abci_query`). Application queries: `/state`, `/account/<address>`, `/validators`, `/unbondings/<address>`;
